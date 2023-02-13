@@ -16,7 +16,7 @@ from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 
-from vyxalbot2.util import ConfigType, AppToken, formatUser, formatRepo
+from vyxalbot2.util import ConfigType, AppToken, formatUser, formatRepo, formatIssue, msgify
 
 
 class VyxalBot2(Application):
@@ -40,7 +40,7 @@ class VyxalBot2(Application):
 
         self.router.add_post("/webhook", self.onHookRequest)
         self.on_startup.append(self.onStartup)
-        self.on_shutdown.append(self.onShutdown)
+        self.on_cleanup.append(self.onShutdown)
 
         self.ghRouter.add(self.onIssueOpened, "issues", action="opened")
         self.ghRouter.add(self.onIssueClosed, "issues", action="closed")
@@ -53,9 +53,16 @@ class VyxalBot2(Application):
         self.ghRouter.add(self.onPRReopened, "pull_request", action="reopened")
         self.ghRouter.add(self.onPRAssigned, "pull_request", action="assigned")
         self.ghRouter.add(self.onPRUnassigned, "pull_request", action="unassigned")
+        self.ghRouter.add(self.onPREnqueued, "pull_request", action="enqueued")
 
         self.ghRouter.add(self.onThingCreated, "create")
+        self.ghRouter.add(self.onThingDeleted, "delete")
         self.ghRouter.add(self.onReleaseCreated, "release", action="released")
+        self.ghRouter.add(self.onFork, "fork")
+        self.ghRouter.add(self.onReviewSubmitted, "pull_request_review", action="submitted")
+
+        self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
+        self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
 
     async def onStartup(self, _):
         await self.bot.authenticate(
@@ -138,14 +145,14 @@ class VyxalBot2(Application):
         issue = event.data["issue"]
         self.logger.info(f'Issue {issue["number"]} opened in {issue["repository_url"]}')
         await self.room.send(
-            f'{formatUser(issue["user"])} opened issue [#{issue["number"]}]({issue["url"]}) ({issue["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(issue["user"])} opened issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onIssueClosed(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
         self.logger.info(f'Issue {issue["number"]} closed in {issue["repository_url"]}')
         await self.room.send(
-            f'{formatUser(issue["user"])} closed issue [#{issue["number"]}]({issue["url"]}) ({issue["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(issue["user"])} closed issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onIssueReopened(self, event: GitHubEvent, gh: GitHubAPI):
@@ -155,7 +162,7 @@ class VyxalBot2(Application):
         )
         await self.room.send(
             (
-                f'{formatUser(issue["user"])} reopened issue [#{issue["number"]}]({issue["url"]}) ({issue["title"]}) in {formatRepo(event.data["repository"])}'
+                f'{formatUser(issue["user"])} reopened issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
             )
         )
 
@@ -166,7 +173,7 @@ class VyxalBot2(Application):
             f'Issue {issue["number"]} assigned to {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
         )
         await self.room.send(
-            f'{formatUser(issue["user"])} assigned [{assignee["login"]}]({assignee["html_url"]}) to issue [#{issue["number"]}]({issue["url"]}) ({issue["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(issue["user"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onIssueUnassigned(self, event: GitHubEvent, gh: GitHubAPI):
@@ -176,55 +183,65 @@ class VyxalBot2(Application):
             f'Issue {issue["number"]} unassigned from {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
         )
         await self.room.send(
-            f'{formatUser(issue["user"])} unassigned [{assignee["login"]}]({assignee["html_url"]}) from issue [#{issue["number"]}]({issue["url"]}) ({issue["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(issue["user"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onPROpened(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pullRequest"]
+        pullRequest = event.data["pull_request"]
         self.logger.info(
-            f'Pull request {pullRequest["number"]} opened in {pullRequest["repository_url"]}'
+            f'Pull request {pullRequest["number"]} opened in {event.data["repository"]["html_url"]}'
         )
         await self.room.send(
-            f'{formatUser(pullRequest["user"])} opened pull request [#{pullRequest["number"]}]({pullRequest["url"]}) ({pullRequest["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(pullRequest["user"])} opened pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onPRClosed(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pullRequest"]
+        pullRequest = event.data["pull_request"]
         self.logger.info(
-            f'Pull request {pullRequest["number"]} closed in {pullRequest["repository_url"]}'
+            f'Pull request {pullRequest["number"]} {"merged" if pullRequest["merged"] else "closed"} in {event.data["repository"]["html_url"]}'
         )
         await self.room.send(
-            f'{formatUser(pullRequest["user"])} closed pull request [#{pullRequest["number"]}]({pullRequest["url"]}) ({pullRequest["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(pullRequest["user"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onPRReopened(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pullRequest"]
+        pullRequest = event.data["pull_request"]
         self.logger.info(
-            f'Pull request {pullRequest["number"]} reopened in {pullRequest["repository_url"]}'
+            f'Pull request {pullRequest["number"]} reopened in {event.data["repository"]["html_url"]}'
         )
         await self.room.send(
-            f'{formatUser(pullRequest["user"])} reopened pull request [#{pullRequest["number"]}]({pullRequest["url"]}) ({pullRequest["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(pullRequest["user"])} reopened pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+        )
+
+    async def onPREnqueued(self, event: GitHubEvent, gh: GitHubAPI):
+        pullRequest = event.data["pull_request"]
+        self.logger.info(
+            f'Pull request {pullRequest["number"]} enqueued in {event.data["repository"]["html_url"]}'
+        )
+        await self.room.send(
+            f'{formatUser(pullRequest["user"])} enqueued pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])} for merging'
         )
 
     async def onPRAssigned(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pullRequest"]
+        pullRequest = event.data["pull_request"]
         assignee = event.data["assignee"]
         self.logger.info(
-            f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {pullRequest["repository_url"]}'
+            f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
         )
         await self.room.send(
-            f'{formatUser(pullRequest["user"])} assigned [{assignee["login"]}]({assignee["html_url"]}) to pullRequest [#{pullRequest["number"]}]({pullRequest["url"]}) ({pullRequest["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(pullRequest["user"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
         )
 
     async def onPRUnassigned(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pullRequest"]
+        pullRequest = event.data["pull_request"]
         assignee = event.data["assignee"]
         self.logger.info(
-            f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {pullRequest["repository_url"]}'
+            f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
         )
         await self.room.send(
-            f'{formatUser(pullRequest["user"])} unassigned [{assignee["login"]}]({assignee["html_url"]}) from pullRequest [#{pullRequest["number"]}]({pullRequest["url"]}) ({pullRequest["title"]}) in {formatRepo(event.data["repository"])}'
+            f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pullRequest {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
         )
+
 
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         self.logger.info(
@@ -232,6 +249,13 @@ class VyxalBot2(Application):
         )
         await self.room.send(
             f'{formatUser(event.data["sender"])} created {event.data["ref_type"]} {event.data["ref"]} in {formatRepo(event.data["repository"])}'
+        )
+    async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
+        self.logger.info(
+            f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
+        )
+        await self.room.send(
+            f'{formatUser(event.data["sender"])} deleted {event.data["ref_type"]} {event.data["ref"]} in {formatRepo(event.data["repository"])}'
         )
 
     async def onReleaseCreated(self, event: GitHubEvent, gh: GitHubAPI):
@@ -244,3 +268,27 @@ class VyxalBot2(Application):
         )
         if event.data["repository"]["name"] in self.config["importantRepositories"]:
             await self.room.pin(message)
+
+    async def onFork(self, event: GitHubEvent, gh: GitHubAPI):
+        self.logger.info(f'{event.data["sender"]["login"]} forked {event.data["forkee"]["full_name"]} from {event.data["repository"]["full_name"]}')
+        await self.room.send(f'{formatUser(event.data["sender"])} forked {formatRepo(event.data["forkee"])} from {formatRepo(event.data["repository"])}')
+
+    async def onReviewSubmitted(self, event: GitHubEvent, g: GitHubAPI):
+        review = event.data["review"]
+        match review["state"]:
+            case "commented":
+                if not review["body"]:
+                    return
+                action = "commented on"
+            case "approved":
+                action = "approved"
+            case "changes_requested":
+                action = "requested changes on"
+            case _:
+                action = "did something to"
+        await self.room.send(f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])}' + (": \"" + msgify(review["body"]) + "\"" if review["body"] else ""))
+
+    async def onRepositoryCreated(self, event: GitHubEvent, g: GitHubAPI):
+        await self.room.send(f'{formatUser(event.data["sender"])} created repository {formatRepo(event.data["repository"])}')
+    async def onRepositoryDeleted(self, event: GitHubEvent, g: GitHubAPI):
+        await self.room.send(f'{formatUser(event.data["sender"])} deleted repository {formatRepo(event.data["repository"])}')
