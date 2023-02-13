@@ -29,7 +29,7 @@ def formatUser(user: dict) -> str:
 def formatRepo(repo: dict) -> str:
     return f'[{repo["full_name"]}]({repo["html_url"]})'
 def formatIssue(issue: dict) -> str:
-    return f'[#{issue["number"]}]({issue["url"]}) ({issue["title"]})'
+    return f'[#{issue["number"]}]({issue["html_url"]}) ({issue["title"]})'
 
 def msgify(text):
     return (
