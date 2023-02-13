@@ -42,6 +42,7 @@ class VyxalBot2(Application):
         with open(self.config["pem"], "r") as f:
             self.privkey = f.read()
 
+        self.ghRouter.add(self.onIssueOpened, "issue", action="opened")
         self.router.add_post("/webhook", self.onHookRequest)
 
     async def on_startup(self):
@@ -75,6 +76,10 @@ class VyxalBot2(Application):
                 self._appToken = AppToken(tokenData["token"], datetime.fromisoformat(tokenData["expires_at"]))
                 return self._appToken
         raise ValueError("Unable to locate installation")
+
+    async def onIssueOpened(self, event: GitHubEvent):
+        issue = event.data["issue"]
+        await self.room.send(f'{issue["user"]["name"]} opened issue [#{issue["number"]}]({issue["url"]}) in [{event.data["repository"]["full_name"]}]({issue["repository_url"]}))')
 
     async def onHookRequest(self, request: Request) -> Response:
         try:
