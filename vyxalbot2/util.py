@@ -15,7 +15,16 @@ class ConfigType(TypedDict):
     SEPassword: str
     SEHost: str
 
+    importantRepositories: list[str]
+
+    admins: list[int]
+
 @dataclass
 class AppToken:
     token: str
     expires: datetime
+
+def formatUser(user: dict) -> str:
+    return f'[{user["login"]}]({user["html_url"]})'
+def formatRepo(repo: dict) -> str:
+    return f'[{repo["full_name"]}]({repo["html_url"]})'
