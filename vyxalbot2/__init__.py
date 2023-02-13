@@ -5,9 +5,11 @@ from datetime import datetime
 import asyncio
 import logging
 import sys
+import json
+import os
 
 from aiohttp import ClientSession
-from aiohttp.web import Application, Request, Response, GracefulExit
+from aiohttp.web import Application, Request, Response, GracefulExit, run_app
 from sechat import Bot, Room, MessageEvent, EventType
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.abc import GitHubAPI
@@ -16,7 +18,14 @@ from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 
-from vyxalbot2.util import ConfigType, AppToken, formatUser, formatRepo, formatIssue, msgify
+from vyxalbot2.util import (
+    ConfigType,
+    AppToken,
+    formatUser,
+    formatRepo,
+    formatIssue,
+    msgify,
+)
 
 
 class VyxalBot2(Application):
@@ -59,7 +68,9 @@ class VyxalBot2(Application):
         self.ghRouter.add(self.onThingDeleted, "delete")
         self.ghRouter.add(self.onReleaseCreated, "release", action="released")
         self.ghRouter.add(self.onFork, "fork")
-        self.ghRouter.add(self.onReviewSubmitted, "pull_request_review", action="submitted")
+        self.ghRouter.add(
+            self.onReviewSubmitted, "pull_request_review", action="submitted"
+        )
 
         self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
         self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
@@ -242,7 +253,6 @@ class VyxalBot2(Application):
             f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pullRequest {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
         )
 
-
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         self.logger.info(
             f'{event.data["sender"]["login"]} created {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
@@ -250,6 +260,7 @@ class VyxalBot2(Application):
         await self.room.send(
             f'{formatUser(event.data["sender"])} created {event.data["ref_type"]} {event.data["ref"]} in {formatRepo(event.data["repository"])}'
         )
+
     async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
         self.logger.info(
             f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
@@ -270,8 +281,12 @@ class VyxalBot2(Application):
             await self.room.pin(message)
 
     async def onFork(self, event: GitHubEvent, gh: GitHubAPI):
-        self.logger.info(f'{event.data["sender"]["login"]} forked {event.data["forkee"]["full_name"]} from {event.data["repository"]["full_name"]}')
-        await self.room.send(f'{formatUser(event.data["sender"])} forked {formatRepo(event.data["forkee"])} from {formatRepo(event.data["repository"])}')
+        self.logger.info(
+            f'{event.data["sender"]["login"]} forked {event.data["forkee"]["full_name"]} from {event.data["repository"]["full_name"]}'
+        )
+        await self.room.send(
+            f'{formatUser(event.data["sender"])} forked {formatRepo(event.data["forkee"])} from {formatRepo(event.data["repository"])}'
+        )
 
     async def onReviewSubmitted(self, event: GitHubEvent, g: GitHubAPI):
         review = event.data["review"]
@@ -286,9 +301,35 @@ class VyxalBot2(Application):
                 action = "requested changes on"
             case _:
                 action = "did something to"
-        await self.room.send(f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])}' + (": \"" + msgify(review["body"]) + "\"" if review["body"] else ""))
+        await self.room.send(
+            f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])}'
+            + (': "' + msgify(review["body"]) + '"' if review["body"] else "")
+        )
 
     async def onRepositoryCreated(self, event: GitHubEvent, g: GitHubAPI):
-        await self.room.send(f'{formatUser(event.data["sender"])} created repository {formatRepo(event.data["repository"])}')
+        await self.room.send(
+            f'{formatUser(event.data["sender"])} created repository {formatRepo(event.data["repository"])}'
+        )
+
     async def onRepositoryDeleted(self, event: GitHubEvent, g: GitHubAPI):
-        await self.room.send(f'{formatUser(event.data["sender"])} deleted repository {formatRepo(event.data["repository"])}')
+        await self.room.send(
+            f'{formatUser(event.data["sender"])} deleted repository {formatRepo(event.data["repository"])}'
+        )
+
+
+def run():
+    CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
+
+    logging.basicConfig(
+        format="[%(name)s] %(levelname)s: %(message)s",
+        stream=sys.stdout,
+        level=logging.DEBUG,
+    )
+
+    with open(CONFIG_PATH, "r") as f:
+        config = json.load(f)
+
+    async def makeApp():
+        return VyxalBot2(config)
+
+    run_app(makeApp(), port=config["port"])
