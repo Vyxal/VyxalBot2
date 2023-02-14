@@ -1,12 +1,16 @@
-from typing import Optional
+from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
+from pathlib import Path
 
-import asyncio
 import logging
 import sys
 import json
 import os
+import signal
+import random
+
+import tomli
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, GracefulExit, run_app
@@ -20,6 +24,7 @@ from cachetools import LRUCache
 
 from vyxalbot2.util import (
     ConfigType,
+    MessagesType,
     AppToken,
     formatUser,
     formatRepo,
@@ -27,15 +32,19 @@ from vyxalbot2.util import (
     msgify,
 )
 
+__version__ = "2.0.0"
 
 class VyxalBot2(Application):
     ADMIN_COMMANDS = ["die"]
 
-    def __init__(self, config: ConfigType) -> None:
+    def __init__(self, config: ConfigType, messages: MessagesType, statuses: list[str]) -> None:
         self.logger = logging.getLogger("VyxalBot2")
         super().__init__(logger=self.logger)
 
         self.config = config
+        self.messages = messages
+        self.statuses = statuses
+        self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
         self._appToken: Optional[AppToken] = None
@@ -82,14 +91,15 @@ class VyxalBot2(Application):
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         await self.room.send("IT'S TIME TO BE A [Big Shot]")
+        self.startupTime = datetime.now()
 
     async def onShutdown(self, _):
         try:
             await self.room.send("SEE YOU KID!")
         except RuntimeError:
             pass
-        await self.session.close()
         await self.bot.__aexit__(None, None, None)  # DO NOT TRY THIS AT HOME
+        await self.session.close()
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
         if self._appToken != None:
@@ -129,6 +139,7 @@ class VyxalBot2(Application):
             await self.ghRouter.dispatch(event, self.gh)
             return Response(status=200)
         except Exception:
+            self.errorsSinceStartup += 1
             if event:
                 msg = f"An error occured while processing event {event.delivery_id}!"
             else:
@@ -143,6 +154,8 @@ class VyxalBot2(Application):
     async def runCommand(
         self, room: Room, event: MessageEvent, command: str, args: list[str]
     ):
+        if event.user_id == room.userID:
+            return
         if (
             command in VyxalBot2.ADMIN_COMMANDS
             and event.user_id not in self.config["admins"]
@@ -150,8 +163,22 @@ class VyxalBot2(Application):
             await self.room.send("[Permissions] NO")
             return
         match command:
+            case "help":
+                if len(args):
+                    await self.room.send(self.messages["commandhelp"].get(args[0], "No help is available for that command."))
+                else:
+                    await self.room.send(self.messages["help"].format(version = __version__))
+            case "info":
+                await self.room.send(self.messages["info"])
+            case "status":
+                if len(args):
+                    if args[0] == "boring":
+                        await self.room.send(f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}")
+                else:
+                    await self.room.send("I am doing " + random.choice(self.statuses))
+
             case "die":
-                raise GracefulExit()
+                signal.raise_signal(signal.SIGINT)
             case _:
                 await self.room.send(
                     f"[{command.title()}]!? {event.user_name.upper()}!? WHAT ARE YOU TALKING ABOUT!?"
@@ -329,6 +356,9 @@ class VyxalBot2(Application):
 
 def run():
     CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
+    DATA_PATH = Path(__file__).resolve().parent.parent / "data" 
+    MESSAGES_PATH = DATA_PATH / "messages.toml"
+    STATUSES_PATH = DATA_PATH / "statuses.txt"
 
     logging.basicConfig(
         format="[%(name)s] %(levelname)s: %(message)s",
@@ -338,8 +368,12 @@ def run():
 
     with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
+    with open(MESSAGES_PATH, "rb") as f:
+        messages = tomli.load(f)
+    with open(STATUSES_PATH, "r") as f:
+        statuses = f.read().splitlines()
 
     async def makeApp():
-        return VyxalBot2(config)
+        return VyxalBot2(config, cast(Any, messages), statuses)
 
     run_app(makeApp(), port=config["port"])

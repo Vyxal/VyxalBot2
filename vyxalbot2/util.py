@@ -19,6 +19,11 @@ class ConfigType(TypedDict):
 
     admins: list[int]
 
+class MessagesType(TypedDict):
+    help: str
+    info: str
+    commandhelp: dict[str, str]
+
 @dataclass
 class AppToken:
     token: str
