@@ -833,7 +833,7 @@ websockets = "^10.4"
 type = "git"
 url = "https://github.com/GingerIndustries/sechat.git"
 reference = "v2"
-resolved_reference = "452d9ae76a62ab9d4d29ab0a31f4cce4400535dd"
+resolved_reference = "ca9b94d30ccc60c646d883b79ebb5f972b4e442c"
 
 [[package]]
 name = "soupsieve"

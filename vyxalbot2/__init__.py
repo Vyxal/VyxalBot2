@@ -84,7 +84,10 @@ class VyxalBot2(Application):
         await self.room.send("IT'S TIME TO BE A [Big Shot]")
 
     async def onShutdown(self, _):
-        await self.room.send("SEE YOU KID!")
+        try:
+            await self.room.send("SEE YOU KID!")
+        except RuntimeError:
+            pass
         await self.session.close()
         await self.bot.__aexit__(None, None, None)  # DO NOT TRY THIS AT HOME
 
@@ -131,7 +134,10 @@ class VyxalBot2(Application):
             else:
                 msg = f"An error occured while processing a request!"
             self.logger.exception(msg)
-            await self.room.send(f"@Ginger " + msg)
+            try:
+                await self.room.send(f"@Ginger " + msg)
+            except RuntimeError:
+                pass
             return Response(status=500)
 
     async def runCommand(
