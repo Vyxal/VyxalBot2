@@ -142,6 +142,7 @@ class VyxalBot2(Application):
             and event.user_id not in self.config["admins"]
         ):
             await self.room.send("[Permissions] NO")
+            return
         match command:
             case "die":
                 raise GracefulExit()
