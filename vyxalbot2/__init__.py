@@ -23,6 +23,7 @@ from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 from platformdirs import user_state_path
+from dateutil.parser import parse as parseDatetime
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
@@ -36,6 +37,7 @@ from vyxalbot2.util import (
     COMMAND_REGEXES,
     MESSAGE_REGEXES,
     RAPTOR,
+    TAG_MAP,
 )
 
 __version__ = "2.0.0"
@@ -122,7 +124,7 @@ class VyxalBot2(Application):
                     private_key=self.privkey,
                 )
                 self._appToken = AppToken(
-                    tokenData["token"], datetime.fromisoformat(tokenData["expires_at"])
+                    tokenData["token"], parseDatetime(tokenData["expires_at"])
                 )
                 return self._appToken
         raise ValueError("Unable to locate installation")
@@ -224,7 +226,7 @@ class VyxalBot2(Application):
             ):
                 await self.room.reply(
                     event.message_id,
-                    f"You do not have permission to run that command (must be a member of group {groupName}). If you think you should be able to, ping Ginger.",
+                    f'You do not have permission to run that command (must be a member of group "{groupName}"). If you think you should be able to, ping Ginger.',
                 )
                 return
         match command:
@@ -331,6 +333,38 @@ class VyxalBot2(Application):
             self.logger.exception(msg)
             self.errorsSinceStartup += 1
 
+    async def autoTag(self, event: GitHubEvent, gh: GitHubAPI):
+        pullRequest = event.data["pull_request"]
+        if event.data["repository"]["name"] not in self.config["importantRepositories"]:
+            return
+        if len(pullRequest["labels"]):
+            return
+        if not pullRequest["body"]:
+            return
+        token = (await self.appToken(gh)).token
+        for match in re.finditer(
+            r"(([Cc]lose[sd]?)|([Ff]ix(e[sd])?)|([Rr]esolve[sd]?)) #(?P<number>\d+)",
+            pullRequest["body"],
+        ):
+            issue = await gh.getitem(
+                f"/repos/{event.data['repository']['full_name']}/issues/{int(match.group('number'))}",
+                oauth_token=token,
+            )
+            await gh.patch(
+                f"/repos/{event.data['repository']['full_name']}/issues/{pullRequest['number']}",
+                data={
+                    "labels": list(
+                        set(
+                            filter(
+                                None,
+                                map(lambda i: TAG_MAP.get(i["name"], False), issue["labels"]),
+                            )
+                        )
+                    )
+                },
+                oauth_token=token,
+            )
+
     async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
         match event.data["action"]:
@@ -397,6 +431,8 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(pullRequest["user"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
+                if action == "opened":
+                    await self.autoTag(event, gh)
 
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         self.logger.info(

@@ -35,6 +35,18 @@ MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
 )
 
+TAG_MAP = {
+    "bug": "PR: Bug Fix",
+    "documentation": "PR: Documentation Fix",
+    "request: element": "PR: Element Implementation",
+    "enhancement": "PR: Enhancement",
+    "difficulty: very hard": "PR: Careful Review Required",
+    "priority: high": "PR: Urgent Review Required",
+    "online interpreter": "PR: Online Interpreter",
+    "version-3": "PR: Version 3 Related",
+    "difficulty: easy": "PR: Light and Easy",
+    "good first issue": "PR: Light and Easy"
+}
 
 class GroupType(TypedDict, total=False):
     promotionRequires: list[str]
