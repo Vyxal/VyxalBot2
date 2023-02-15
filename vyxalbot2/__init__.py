@@ -181,6 +181,7 @@ class VyxalBot2(Application):
                         "You need to specify a permission!",
                     )
                     return
+                args["permission"] = args["permission"].removesuffix("s")
                 try:
                     promotionRequires = self.config["groups"][args["permission"]].get(
                         "promotionRequires", []
@@ -283,6 +284,7 @@ class VyxalBot2(Application):
                     "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
                 )
             case "groups":
+                args["group"] = args["group"].removesuffix("s")
                 match args["action"]:
                     case "list":
                         await self.room.reply(
@@ -295,6 +297,7 @@ class VyxalBot2(Application):
                             f"Members of group {args['group']}: {', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(args['group'])))}",
                         )
             case "ping":
+                args["group"] = args["group"].removesuffix("s")
                 if not len(
                     message := " ".join(
                         [
