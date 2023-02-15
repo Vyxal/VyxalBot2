@@ -17,9 +17,12 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     ): "coffee",
     (r"maul (?P<user>.+)",): "maul",
     (r"die",): "die",
-    (r"amiadmin",): "amiadmin",
-    (r"permissions (?P<action>list|grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",): "permissions",
-    (r"register",): "register"
+    (
+        r"permissions (?P<action>list|grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",
+    ): "permissions",
+    (r"groups (?P<action>list)", r"groups (?P<action>members) (?P<group>.+)"): "groups",
+    (r"register",): "register",
+    (r"ping (?P<group>.+)(?P<message>.*)",): "ping",
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
@@ -32,8 +35,11 @@ MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
 )
 
+
 class GroupType(TypedDict, total=False):
-    promotionRequires: Optional[list[str]]
+    promotionRequires: list[str]
+    canRun: list[str]
+
 
 class ConfigType(TypedDict):
     port: int

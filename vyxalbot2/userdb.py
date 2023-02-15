@@ -33,3 +33,6 @@ class UserDB:
         self._db.update(
             {"groups": user["groups"]}, Query().chatID == user["chatID"]
         )
+
+    def membersOfGroup(self, group: str):
+        return self._db.search(Query().groups.any([group]))

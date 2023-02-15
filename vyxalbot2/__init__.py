@@ -182,8 +182,10 @@ class VyxalBot2(Application):
                     )
                     return
                 try:
-                    promotionRequires = self.config["groups"][args["permission"]].get("promotionRequires", [])
-                    if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires): # type: ignore
+                    promotionRequires = self.config["groups"][args["permission"]].get(
+                        "promotionRequires", []
+                    )
+                    if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires):  # type: ignore
                         await self.room.reply(
                             event.message_id,
                             "Insufficient permissions!",
@@ -213,16 +215,17 @@ class VyxalBot2(Application):
     ):
         if event.user_id == room.userID:
             return
-        if command in VyxalBot2.ADMIN_COMMANDS and (
-            "admin" in r["groups"]
-            if (r := self.userDB.getUserInfo(event.user_id))
-            else False
-        ):
-            await self.room.reply(
-                event.message_id,
-                "You do not have permission to run that command. If you think you should be able to, ping Ginger.",
-            )
-            return
+        for groupName, group in self.config["groups"].items():
+            if command in group.get("canRun", []) and not (
+                groupName in r["groups"]
+                if (r := self.userDB.getUserInfo(event.user_id))
+                else False
+            ):
+                await self.room.reply(
+                    event.message_id,
+                    f"You do not have permission to run that command (must be a member of group {groupName}). If you think you should be able to, ping Ginger.",
+                )
+                return
         match command:
             case "help":
                 if commandName := args.get("command", ""):
@@ -267,21 +270,43 @@ class VyxalBot2(Application):
                 await self.permissionsCommand(event, args)
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
-                    await self.room.reply(
-                        event.message_id, "You are already registered."
+                    self.userDB.removeUserFromDatabase(event.user_id)
+                self.userDB.addUserToDatabase(
+                    await (
+                        await self.session.get(
+                            f"https://chat.stackexchange.com/users/thumbs/{event.user_id}"
+                        )
+                    ).json()
+                )
+                await self.room.reply(
+                    event.message_id,
+                    "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
+                )
+            case "groups":
+                match args["action"]:
+                    case "list":
+                        await self.room.reply(
+                            event.message_id,
+                            f"All groups: {', '.join(self.config['groups'].keys())}",
+                        )
+                    case "members":
+                        await self.room.reply(
+                            event.message_id,
+                            f"Members of group {args['group']}: {', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(args['group'])))}",
+                        )
+            case "ping":
+                if not len(
+                    message := " ".join(
+                        [
+                            "@" + user["name"]
+                            for user in self.userDB.membersOfGroup(args["group"])
+                        ]
                     )
+                    + args["message"]
+                ):
+                    await self.room.send("Nobody to ping.")
                 else:
-                    self.userDB.addUserToDatabase(
-                        await (
-                            await self.session.get(
-                                f"https://chat.stackexchange.com/users/thumbs/{event.user_id}"
-                            )
-                        ).json()
-                    )
-                    await self.room.reply(
-                        event.message_id,
-                        "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
-                    )
+                    await self.room.send(message)
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
