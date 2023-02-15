@@ -289,7 +289,6 @@ class VyxalBot2(Application):
                     "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
                 )
             case "groups":
-                args["group"] = args["group"].removesuffix("s")
                 match args["action"]:
                     case "list":
                         await self.room.reply(
@@ -297,6 +296,7 @@ class VyxalBot2(Application):
                             f"All groups: {', '.join(self.config['groups'].keys())}",
                         )
                     case "members":
+                        args["group"] = args["group"].removesuffix("s")
                         await self.room.reply(
                             event.message_id,
                             f"Members of group {args['group']}: {', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(args['group'])))}",
