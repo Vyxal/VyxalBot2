@@ -4,7 +4,7 @@ All of my commands start with !!/
 If you want help for a specific command, do !!/help <command name>.
 New to Vyxal? Try !!/info for more information.
 
-Command list: (Not all commands can be used by all users)'''
+Command list: '''
 info = """[GitHub Repository](https://github.com/Vyxal/Vyxal/) | \
     [Online Interpreter](https://vyxal.pythonanywhere.com) | \
     [Tutorial](https://github.com/Vyxal/Vyxal/blob/master/docs/Tutorial.md) | \
