@@ -435,6 +435,8 @@ class VyxalBot2(Application):
                     await self.autoTag(event, gh)
 
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
+        if event.data["ref_type"] == "tag":
+            return
         self.logger.info(
             f'{event.data["sender"]["login"]} created {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
         )
@@ -443,6 +445,8 @@ class VyxalBot2(Application):
         )
 
     async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
+        if event.data["ref_type"] == "tag":
+            return
         self.logger.info(
             f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
         )
@@ -456,7 +460,7 @@ class VyxalBot2(Application):
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
         message = await self.room.send(
-            f'{formatUser(event.data["sender"])} released [{release["name"]}]({release["html_url"]}) in {formatRepo(event.data["repository"])}'
+            f'__[{event.data["repository"]["name"]} {release["name"].lower()}]({release["html_url"]})__'
         )
         if event.data["repository"]["name"] in self.config["importantRepositories"]:
             await self.room.pin(message)
