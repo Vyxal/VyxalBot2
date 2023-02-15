@@ -248,7 +248,7 @@ class VyxalBot2(Application):
             case "assigned":
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {pullRequest["repository_url"]}'
+                    f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
                     f'{formatUser(pullRequest["user"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
@@ -257,14 +257,14 @@ class VyxalBot2(Application):
                 pullRequest = event.data["issue"]
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {pullRequest["repository_url"]}'
+                    f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
                     f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case _ as action if action in ["closed", "opened", "reopened", "enqueued"]:
                 self.logger.info(
-                    f'Pull request {pullRequest["number"]} {action} in {pullRequest["repository_url"]}'
+                    f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
                     f'{formatUser(pullRequest["user"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
