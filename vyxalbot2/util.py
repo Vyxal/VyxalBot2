@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional
+from typing import Optional, TypedDict
 from datetime import datetime
 from dataclasses import dataclass
 from re import fullmatch
@@ -17,7 +17,9 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     ): "coffee",
     (r"maul (?P<user>.+)",): "maul",
     (r"die",): "die",
-    (r"amiadmin",): "amiadmin"
+    (r"amiadmin",): "amiadmin",
+    (r"permissions (?P<action>list|grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",): "permissions",
+    (r"register",): "register"
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
@@ -30,6 +32,8 @@ MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
 )
 
+class GroupType(TypedDict, total=False):
+    promotionRequires: Optional[list[str]]
 
 class ConfigType(TypedDict):
     port: int
@@ -46,7 +50,7 @@ class ConfigType(TypedDict):
 
     importantRepositories: list[str]
 
-    admins: list[int]
+    groups: dict[str, GroupType]
 
 
 class MessagesType(TypedDict):

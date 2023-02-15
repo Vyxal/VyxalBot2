@@ -848,6 +848,18 @@ files = [
 ]
 
 [[package]]
+name = "tinydb"
+version = "4.7.1"
+description = "TinyDB is a tiny, document oriented database optimized for your happiness :)"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "tinydb-4.7.1-py3-none-any.whl", hash = "sha256:1534e498ca23f55c43b0f1e7c0cf174049498ab45a887c82ba9831e0f9868df3"},
+    {file = "tinydb-4.7.1.tar.gz", hash = "sha256:8955c239a79b8a6c8f637900152e2de38690848199d71d870c33c16405433ca5"},
+]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -1041,4 +1053,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "aa357ff6c958043a225bc01a2aac96ff0cced32875af71981387e91401a4a8c6"
+content-hash = "1154b52fe5ab5de14d67086cc84029f15ac2c0940400b4d98177fece535c74e2"

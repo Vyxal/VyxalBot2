@@ -22,7 +22,9 @@ from gidgethub.routing import Router
 from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
+from platformdirs import user_state_path
 
+from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
     ConfigType,
     MessagesType,
@@ -43,7 +45,11 @@ class VyxalBot2(Application):
     ADMIN_COMMANDS = ["die"]
 
     def __init__(
-        self, config: ConfigType, messages: MessagesType, statuses: list[str]
+        self,
+        config: ConfigType,
+        messages: MessagesType,
+        storagePath: str,
+        statuses: list[str],
     ) -> None:
         self.logger = logging.getLogger("VyxalBot2")
         super().__init__(logger=self.logger)
@@ -51,6 +57,7 @@ class VyxalBot2(Application):
         self.config = config
         self.messages = messages
         self.statuses = statuses
+        self.userDB = UserDB(storagePath, self.config["groups"])
         self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
@@ -148,16 +155,73 @@ class VyxalBot2(Application):
                 pass
             return Response(status=500)
 
+    async def permissionsCommand(self, event: MessageEvent, args: dict[str, Any]):
+        target = self.userDB.getUserInfo(
+            int(args["user"]) if args["user"] != "me" else event.user_id
+        )
+        sender = self.userDB.getUserInfo(event.user_id)
+        if not sender:
+            await self.room.reply(
+                event.message_id, "You are not in my database. Please run !!/register."
+            )
+            return
+        if not target:
+            await self.room.reply(event.message_id, "That user is not in my database.")
+            return
+        match args["action"]:
+            case "list":
+                await self.room.reply(
+                    event.message_id,
+                    f"User {target['name']} is a member of groups {', '.join(target['groups'])}.",
+                )
+            case "grant" | "revoke" as action:
+                if not args.get("permission"):
+                    await self.room.reply(
+                        event.message_id,
+                        "You need to specify a permission!",
+                    )
+                    return
+                try:
+                    promotionRequires = self.config["groups"][args["permission"]].get("promotionRequires", [])
+                    if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires): # type: ignore
+                        await self.room.reply(
+                            event.message_id,
+                            "Insufficient permissions!",
+                        )
+                        return
+                except KeyError:
+                    await self.room.reply(
+                        event.message_id,
+                        "No such group!",
+                    )
+                    return
+                if action == "grant":
+                    self.userDB.addUserToGroup(target, args["permission"])
+                    await self.room.reply(
+                        event.message_id,
+                        f"User {target['name']} is now a member of group {args['permission']}.",
+                    )
+                else:
+                    self.userDB.removeUserFromGroup(target, args["permission"])
+                    await self.room.reply(
+                        event.message_id,
+                        f"User {target['name']} is no longer a member of group {args['permission']}.",
+                    )
+
     async def runCommand(
         self, room: Room, event: MessageEvent, command: str, args: dict[str, Any]
     ):
-        if event.message_id == room.userID:
+        if event.user_id == room.userID:
             return
-        if (
-            command in VyxalBot2.ADMIN_COMMANDS
-            and event.message_id not in self.config["admins"]
+        if command in VyxalBot2.ADMIN_COMMANDS and (
+            "admin" in r["groups"]
+            if (r := self.userDB.getUserInfo(event.user_id))
+            else False
         ):
-            await self.room.reply(event.message_id, "You do not have permission to run that command. If you think you should be able to, ping Ginger.")
+            await self.room.reply(
+                event.message_id,
+                "You do not have permission to run that command. If you think you should be able to, ping Ginger.",
+            )
             return
         match command:
             case "help":
@@ -175,7 +239,9 @@ class VyxalBot2(Application):
                         )
                 else:
                     await self.room.reply(
-                        event.message_id, self.messages["help"].format(version=__version__) + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}"
+                        event.message_id,
+                        self.messages["help"].format(version=__version__)
+                        + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}",
                     )
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
@@ -190,13 +256,32 @@ class VyxalBot2(Application):
                         event.message_id, "I am doing " + random.choice(self.statuses)
                     )
             case "coffee":
-                await self.room.send(f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕")
+                await self.room.send(
+                    f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
+                )
             case "maul":
                 await self.room.send(RAPTOR.format(user=args["user"].upper()))
             case "die":
                 signal.raise_signal(signal.SIGINT)
-            case "amiadmin":
-                await self.room.reply(event.message_id, f"You are{' ' if event.user_id in self.config['admins'] else ' not'} a bot admin.")
+            case "permissions":
+                await self.permissionsCommand(event, args)
+            case "register":
+                if self.userDB.getUserInfo(event.user_id):
+                    await self.room.reply(
+                        event.message_id, "You are already registered."
+                    )
+                else:
+                    self.userDB.addUserToDatabase(
+                        await (
+                            await self.session.get(
+                                f"https://chat.stackexchange.com/users/thumbs/{event.user_id}"
+                            )
+                        ).json()
+                    )
+                    await self.room.reply(
+                        event.message_id,
+                        "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
+                    )
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -207,9 +292,13 @@ class VyxalBot2(Application):
                         return await self.runCommand(
                             room, event, command, match.groupdict()
                         )
-                await self.room.send(f"Sorry {event.user_name}, I'm afraid can't do that.")
+                await self.room.send(
+                    f"Sorry {event.user_name}, I'm afraid can't do that."
+                )
         except Exception:
-            msg = f"@Ginger An error occurred while handling message {event.message_id}!"
+            msg = (
+                f"@Ginger An error occurred while handling message {event.message_id}!"
+            )
             await self.room.send(msg)
             self.logger.exception(msg)
             self.errorsSinceStartup += 1
@@ -270,7 +359,9 @@ class VyxalBot2(Application):
                     f'{formatUser(pullRequest["user"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "review_requested":
-                await self.room.send(f'{formatUser(pullRequest["user"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}')
+                await self.room.send(
+                    f'{formatUser(pullRequest["user"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
+                )
             case _ as action if action in ["opened", "reopened", "enqueued"]:
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
@@ -345,6 +436,8 @@ class VyxalBot2(Application):
 
 def run():
     CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
+    STORAGE_PATH = user_state_path("vyxalbot2", None, __version__)
+    os.makedirs(STORAGE_PATH, exist_ok=True)
     DATA_PATH = Path(__file__).resolve().parent.parent / "data"
     MESSAGES_PATH = DATA_PATH / "messages.toml"
     STATUSES_PATH = DATA_PATH / "statuses.txt"
@@ -363,6 +456,8 @@ def run():
         statuses = f.read().splitlines()
 
     async def makeApp():
-        return VyxalBot2(config, cast(Any, messages), statuses)
+        return VyxalBot2(
+            config, cast(Any, messages), str(STORAGE_PATH / "storage.json"), statuses
+        )
 
     run_app(makeApp(), port=config["port"])
