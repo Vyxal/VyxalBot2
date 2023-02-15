@@ -262,7 +262,14 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
-            case _ as action if action in ["closed", "opened", "reopened", "enqueued"]:
+            case "closed":
+                self.logger.info(
+                    f'Pull request {pullRequest["number"]} {"merged" if pullRequest["merged"] else "closed"} in {event.data["repository"]["html_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(pullRequest["user"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                )
+            case _ as action if action in ["opened", "reopened", "enqueued"]:
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
                 )
