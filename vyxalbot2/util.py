@@ -1,6 +1,35 @@
-from typing import TypedDict
+from typing import TypedDict, Optional
 from datetime import datetime
 from dataclasses import dataclass
+from re import fullmatch
+from itertools import chain, repeat
+
+COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
+    (
+        r"status( (?P<boring>boring))?",
+        r"((lol )?(yo)?u good( (there )?(my )?(epic )? (bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
+    ): "status",
+    (r"info",): "info",
+    (r"help( (?P<command>.+))?",): "help",
+    (
+        r"coffee (?P<user>.+)",
+        r"(make|brew)( a cup of)? coffee for (?P<user>.+)",
+    ): "coffee",
+    (r"maul (?P<user>.+)",): "maul",
+    (r"die",): "die",
+    (r"amiadmin",): "amiadmin"
+}
+MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
+    (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
+    (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
+}
+COMMAND_REGEXES: dict[str, str] = dict(
+    chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())
+)
+MESSAGE_REGEXES: dict[str, str] = dict(
+    chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
+)
+
 
 class ConfigType(TypedDict):
     port: int
@@ -19,17 +48,30 @@ class ConfigType(TypedDict):
 
     admins: list[int]
 
+
+class MessagesType(TypedDict):
+    help: str
+    info: str
+    commandhelp: dict[str, str]
+
+
 @dataclass
 class AppToken:
     token: str
     expires: datetime
 
+
 def formatUser(user: dict) -> str:
     return f'[{user["login"]}]({user["html_url"]})'
+
+
 def formatRepo(repo: dict) -> str:
     return f'[{repo["full_name"]}]({repo["html_url"]})'
+
+
 def formatIssue(issue: dict) -> str:
     return f'[#{issue["number"]}]({issue["html_url"]}) ({issue["title"]})'
+
 
 def msgify(text):
     return (
@@ -40,3 +82,29 @@ def msgify(text):
         .replace("*", "\\*")
         .replace("`", "\\`")
     )
+
+
+RAPTOR = r"""
+                                                                   YOU CAN RUN, BUT YOU CAN'T HIDE, {user}
+                                                         ___._
+                                                       .'  <0>'-.._
+                                                      /  /.--.____")
+                                                     |   \   __.-'~
+                                                     |  :  -'/
+                                                    /:.  :.-'
+    __________                                     | : '. |
+    '--.____  '--------.______       _.----.-----./      :/
+            '--.__            `'----/       '-.      __ :/
+                  '-.___           :           \   .'  )/
+                        '---._           _.-'   ] /  _/
+                             '-._      _/     _/ / _/
+                                 \_ .-'____.-'__< |  \___
+                                   <_______.\    \_\_---.7
+                                  |   /'=r_.-'     _\\ =/
+                              .--'   /            ._/'>
+                            .'   _.-'
+       snd                 / .--'
+                          /,/
+                          |/`)
+                          'c=,
+"""

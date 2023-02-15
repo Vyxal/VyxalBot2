@@ -1,12 +1,17 @@
-from typing import Optional
+from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
+from pathlib import Path
 
-import asyncio
 import logging
 import sys
 import json
 import os
+import signal
+import random
+import re
+
+import tomli
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, GracefulExit, run_app
@@ -20,22 +25,33 @@ from cachetools import LRUCache
 
 from vyxalbot2.util import (
     ConfigType,
+    MessagesType,
     AppToken,
     formatUser,
     formatRepo,
     formatIssue,
     msgify,
+    COMMAND_REGEXES,
+    MESSAGE_REGEXES,
+    RAPTOR,
 )
+
+__version__ = "2.0.0"
 
 
 class VyxalBot2(Application):
     ADMIN_COMMANDS = ["die"]
 
-    def __init__(self, config: ConfigType) -> None:
+    def __init__(
+        self, config: ConfigType, messages: MessagesType, statuses: list[str]
+    ) -> None:
         self.logger = logging.getLogger("VyxalBot2")
         super().__init__(logger=self.logger)
 
         self.config = config
+        self.messages = messages
+        self.statuses = statuses
+        self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
         self._appToken: Optional[AppToken] = None
@@ -51,18 +67,8 @@ class VyxalBot2(Application):
         self.on_startup.append(self.onStartup)
         self.on_cleanup.append(self.onShutdown)
 
-        self.ghRouter.add(self.onIssueOpened, "issues", action="opened")
-        self.ghRouter.add(self.onIssueClosed, "issues", action="closed")
-        self.ghRouter.add(self.onIssueReopened, "issues", action="reopened")
-        self.ghRouter.add(self.onIssueAssigned, "issues", action="assigned")
-        self.ghRouter.add(self.onIssueUnassigned, "issues", action="unassigned")
-
-        self.ghRouter.add(self.onPROpened, "pull_request", action="opened")
-        self.ghRouter.add(self.onPRClosed, "pull_request", action="closed")
-        self.ghRouter.add(self.onPRReopened, "pull_request", action="reopened")
-        self.ghRouter.add(self.onPRAssigned, "pull_request", action="assigned")
-        self.ghRouter.add(self.onPRUnassigned, "pull_request", action="unassigned")
-        self.ghRouter.add(self.onPREnqueued, "pull_request", action="enqueued")
+        self.ghRouter.add(self.onIssueAction, "issues")
+        self.ghRouter.add(self.onPRAction, "pull_request")
 
         self.ghRouter.add(self.onThingCreated, "create")
         self.ghRouter.add(self.onThingDeleted, "delete")
@@ -81,12 +87,16 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
-        await self.room.send("IT'S TIME TO BE A [Big Shot]")
+        await self.room.send("Well, here we are again.")
+        self.startupTime = datetime.now()
 
     async def onShutdown(self, _):
-        await self.room.send("SEE YOU KID!")
-        await self.session.close()
+        try:
+            await self.room.send("Ah'll be bahk.")
+        except RuntimeError:
+            pass
         await self.bot.__aexit__(None, None, None)  # DO NOT TRY THIS AT HOME
+        await self.session.close()
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
         if self._appToken != None:
@@ -126,136 +136,139 @@ class VyxalBot2(Application):
             await self.ghRouter.dispatch(event, self.gh)
             return Response(status=200)
         except Exception:
+            self.errorsSinceStartup += 1
             if event:
                 msg = f"An error occured while processing event {event.delivery_id}!"
             else:
                 msg = f"An error occured while processing a request!"
             self.logger.exception(msg)
-            await self.room.send(f"@Ginger " + msg)
+            try:
+                await self.room.send(f"@Ginger " + msg)
+            except RuntimeError:
+                pass
             return Response(status=500)
 
     async def runCommand(
-        self, room: Room, event: MessageEvent, command: str, args: list[str]
+        self, room: Room, event: MessageEvent, command: str, args: dict[str, Any]
     ):
+        if event.message_id == room.userID:
+            return
         if (
             command in VyxalBot2.ADMIN_COMMANDS
-            and event.user_id not in self.config["admins"]
+            and event.message_id not in self.config["admins"]
         ):
-            await self.room.send("[Permissions] NO")
+            await self.room.reply(event.message_id, "You do not have permission to run that command. If you think you should be able to, ping Ginger.")
             return
         match command:
+            case "help":
+                if commandName := args.get("command", ""):
+                    if commandName == "me":
+                        await self.room.reply(
+                            event.message_id, "I'd love to, but I don't have any limbs."
+                        )
+                    else:
+                        await self.room.reply(
+                            event.message_id,
+                            self.messages["commandhelp"].get(
+                                commandName, "No help is available for that command."
+                            ),
+                        )
+                else:
+                    await self.room.reply(
+                        event.message_id, self.messages["help"].format(version=__version__) + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}"
+                    )
+            case "info":
+                await self.room.reply(event.message_id, self.messages["info"])
+            case "status":
+                if args.get("boring", ""):
+                    await self.room.reply(
+                        event.message_id,
+                        f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}",
+                    )
+                else:
+                    await self.room.reply(
+                        event.message_id, "I am doing " + random.choice(self.statuses)
+                    )
+            case "coffee":
+                await self.room.send(f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕")
+            case "maul":
+                await self.room.send(RAPTOR.format(user=args["user"].upper()))
             case "die":
-                raise GracefulExit()
-            case _:
-                await self.room.send(
-                    f"[{command.title()}]!? {event.user_name.upper()}!? WHAT ARE YOU TALKING ABOUT!?"
-                )
+                signal.raise_signal(signal.SIGINT)
+            case "amiadmin":
+                await self.room.reply(event.message_id, f"You are{' ' if event.user_id in self.config['admins'] else ' not'} a bot admin.")
 
     async def onMessage(self, room: Room, event: MessageEvent):
-        if event.content.startswith("!!/"):
-            command = event.content.removeprefix("!!/").split(" ")
-            await self.runCommand(room, event, command[0], command[1:])
+        try:
+            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
+                rawCommand = match["command"]
+                for regex, command in COMMAND_REGEXES.items():
+                    if match := re.fullmatch(regex, rawCommand):
+                        return await self.runCommand(
+                            room, event, command, match.groupdict()
+                        )
+                await self.room.send(f"Sorry {event.user_name}, I'm afraid can't do that.")
+        except Exception:
+            msg = f"@Ginger An error occurred while handling message {event.message_id}!"
+            await self.room.send(msg)
+            self.logger.exception(msg)
+            self.errorsSinceStartup += 1
 
-    async def onIssueOpened(self, event: GitHubEvent, gh: GitHubAPI):
+    async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
-        self.logger.info(f'Issue {issue["number"]} opened in {issue["repository_url"]}')
-        await self.room.send(
-            f'{formatUser(issue["user"])} opened issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
-        )
+        match event.data["action"]:
+            case "assigned":
+                assignee = event.data["assignee"]
+                self.logger.info(
+                    f'Issue {issue["number"]} assigned to {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(issue["user"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                )
+            case "unassigned":
+                issue = event.data["issue"]
+                assignee = event.data["assignee"]
+                self.logger.info(
+                    f'Issue {issue["number"]} unassigned from {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(issue["user"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                )
+            case _ as action if action in ["closed", "opened", "reopened"]:
+                self.logger.info(
+                    f'Issue {issue["number"]} {action} in {issue["repository_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(issue["user"])} {action} issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                )
 
-    async def onIssueClosed(self, event: GitHubEvent, gh: GitHubAPI):
-        issue = event.data["issue"]
-        self.logger.info(f'Issue {issue["number"]} closed in {issue["repository_url"]}')
-        await self.room.send(
-            f'{formatUser(issue["user"])} closed issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onIssueReopened(self, event: GitHubEvent, gh: GitHubAPI):
-        issue = event.data["issue"]
-        self.logger.info(
-            f'Issue {issue["number"]} reopened in {issue["repository_url"]}'
-        )
-        await self.room.send(
-            (
-                f'{formatUser(issue["user"])} reopened issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
-            )
-        )
-
-    async def onIssueAssigned(self, event: GitHubEvent, gh: GitHubAPI):
-        issue = event.data["issue"]
-        assignee = event.data["assignee"]
-        self.logger.info(
-            f'Issue {issue["number"]} assigned to {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(issue["user"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onIssueUnassigned(self, event: GitHubEvent, gh: GitHubAPI):
-        issue = event.data["issue"]
-        assignee = event.data["assignee"]
-        self.logger.info(
-            f'Issue {issue["number"]} unassigned from {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(issue["user"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onPROpened(self, event: GitHubEvent, gh: GitHubAPI):
+    async def onPRAction(self, event: GitHubEvent, gh: GitHubAPI):
         pullRequest = event.data["pull_request"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} opened in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} opened pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onPRClosed(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pull_request"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} {"merged" if pullRequest["merged"] else "closed"} in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onPRReopened(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pull_request"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} reopened in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} reopened pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onPREnqueued(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pull_request"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} enqueued in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} enqueued pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])} for merging'
-        )
-
-    async def onPRAssigned(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pull_request"]
-        assignee = event.data["assignee"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
-        )
-
-    async def onPRUnassigned(self, event: GitHubEvent, gh: GitHubAPI):
-        pullRequest = event.data["pull_request"]
-        assignee = event.data["assignee"]
-        self.logger.info(
-            f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
-        )
-        await self.room.send(
-            f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pullRequest {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
-        )
+        match event.data["action"]:
+            case "assigned":
+                assignee = event.data["assignee"]
+                self.logger.info(
+                    f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(pullRequest["user"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                )
+            case "unassigned":
+                pullRequest = event.data["issue"]
+                assignee = event.data["assignee"]
+                self.logger.info(
+                    f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                )
+            case _ as action if action in ["closed", "opened", "reopened", "enqueued"]:
+                self.logger.info(
+                    f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(pullRequest["user"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                )
 
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         self.logger.info(
@@ -323,6 +336,9 @@ class VyxalBot2(Application):
 
 def run():
     CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
+    DATA_PATH = Path(__file__).resolve().parent.parent / "data"
+    MESSAGES_PATH = DATA_PATH / "messages.toml"
+    STATUSES_PATH = DATA_PATH / "statuses.txt"
 
     logging.basicConfig(
         format="[%(name)s] %(levelname)s: %(message)s",
@@ -332,8 +348,12 @@ def run():
 
     with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
+    with open(MESSAGES_PATH, "rb") as f:
+        messages = tomli.load(f)
+    with open(STATUSES_PATH, "r") as f:
+        statuses = f.read().splitlines()
 
     async def makeApp():
-        return VyxalBot2(config)
+        return VyxalBot2(config, cast(Any, messages), statuses)
 
     run_app(makeApp(), port=config["port"])
