@@ -266,7 +266,10 @@ class VyxalBot2(Application):
                     f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
                 )
             case "maul":
-                await self.room.send(RAPTOR.format(user=args["user"].upper()))
+                if args["user"].lower() == "vyxalbot":
+                    await self.room.send("No.")
+                else:
+                    await self.room.send(RAPTOR.format(user=args["user"].upper()))
             case "die":
                 signal.raise_signal(signal.SIGINT)
             case "permissions":
@@ -323,7 +326,7 @@ class VyxalBot2(Application):
                             room, event, command, match.groupdict()
                         )
                 await self.room.send(
-                    f"Sorry {event.user_name}, I'm afraid can't do that."
+                    f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
         except Exception:
             msg = (
