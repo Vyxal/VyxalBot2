@@ -11,18 +11,6 @@ TAG_MAP = {
     "good first issue": "PR: Light and Easy",
 }
 
-def formatUser(user: dict) -> str:
-    return f'[{user["login"]}]({user["html_url"]})'
-
-
-def formatRepo(repo: dict) -> str:
-    return f'[{repo["full_name"]}]({repo["html_url"]})'
-
-
-def formatIssue(issue: dict) -> str:
-    return f'[#{issue["number"]}]({issue["html_url"]}) ({issue["title"]})'
-
-
 def msgify(text):
     return (
         text.split("\n")[0]
@@ -32,6 +20,23 @@ def msgify(text):
         .replace("*", "\\*")
         .replace("`", "\\`")
     )
+def linkify(text):
+    return (msgify(str(text))
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+    )
+
+
+def formatUser(user: dict) -> str:
+    return f'[{linkify(user["login"])}]({user["html_url"]})'
+
+
+def formatRepo(repo: dict, fullName: bool = True) -> str:
+    return f'[{linkify(repo["full_name"] if fullName else repo["name"])}]({repo["html_url"]})'
+
+
+def formatIssue(issue: dict) -> str:
+    return f'[#{linkify(issue["number"])}]({issue["html_url"]}) ({issue["title"]})'
 
 
 RAPTOR = r"""

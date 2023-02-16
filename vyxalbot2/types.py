@@ -11,7 +11,7 @@ class GroupType(TypedDict, total=False):
 class ConfigType(TypedDict):
     port: int
 
-    accountID: int
+    account: str
     appID: str
     pem: str
     webhookSecret: str

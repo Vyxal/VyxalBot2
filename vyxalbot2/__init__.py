@@ -16,6 +16,7 @@ import tomli
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, GracefulExit, run_app
 from sechat import Bot, Room, MessageEvent, EventType
+from gidgethub import HTTPException as GitHubHTTPException
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.abc import GitHubAPI
 from gidgethub.routing import Router
@@ -113,7 +114,7 @@ class VyxalBot2(Application):
             "/app/installations",
             jwt=jwt,
         ):
-            if installation["account"]["id"] == self.config["accountID"]:
+            if installation["account"]["login"] == self.config["account"]:
                 tokenData = await get_installation_access_token(
                     gh,
                     installation_id=installation["id"],
@@ -227,6 +228,8 @@ class VyxalBot2(Application):
                 )
                 return
         match command:
+            case "die":
+                signal.raise_signal(signal.SIGINT)
             case "help":
                 if commandName := args.get("command", ""):
                     if commandName == "me":
@@ -258,17 +261,6 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id, "I am doing " + random.choice(self.statuses)
                     )
-            case "coffee":
-                await self.room.send(
-                    f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
-                )
-            case "maul":
-                if args["user"].lower() == "vyxalbot":
-                    await self.room.send("No.")
-                else:
-                    await self.room.send(RAPTOR.format(user=args["user"].upper()))
-            case "die":
-                signal.raise_signal(signal.SIGINT)
             case "permissions":
                 await self.permissionsCommand(event, args)
             case "register":
@@ -312,6 +304,15 @@ class VyxalBot2(Application):
                     await self.room.send("Nobody to ping.")
                 else:
                     await self.room.send(message)
+            case "coffee":
+                await self.room.send(
+                    f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
+                )
+            case "maul":
+                if args["user"].lower() == "vyxalbot":
+                    await self.room.send("No.")
+                else:
+                    await self.room.send(RAPTOR.format(user=args["user"].upper()))
             case "cookie":
                 if info := self.userDB.getUserInfo(event.user_id):
                     if "admin" in info["groups"]:
@@ -325,6 +326,34 @@ class VyxalBot2(Application):
                 await self.room.reply(
                     event.message_id, random.choice(self.messages["hugs"])
                 )
+            case "repo-list":
+                await self.room.reply(
+                    event.message_id,
+                    "Repositories: "
+                    + " | ".join(
+                        [
+                            formatRepo(item, False)
+                            async for item in self.gh.getiter(
+                                f"/users/{self.config['account']}/repos",
+                                {"sort": "created"},
+                                oauth_token=(await self.appToken(self.gh)).token,
+                            )
+                        ][:5]
+                    ),
+                )
+            case "issue-open":
+                try:
+                    await self.gh.post(
+                        f"/repos/{self.config['account']}/{args.get('repo', 'Vyxal')}/issues",
+                        data={
+                            "title": args["title"],
+                            "body": args["content"]
+                            + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
+                        },
+                        oauth_token = (await self.appToken(self.gh)).token
+                    )
+                except GitHubHTTPException as e:
+                    await self.room.reply(event.message_id, f"Failed to create issue: {e.status_code.value} {e.status_code.description}")
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
