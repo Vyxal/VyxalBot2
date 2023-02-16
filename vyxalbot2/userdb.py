@@ -3,7 +3,7 @@ from typing import Optional
 from tinydb import TinyDB, Query
 from tinydb.table import Document
 
-from vyxalbot2.util import GroupType
+from vyxalbot2.types import GroupType
 
 
 class UserDB:

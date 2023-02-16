@@ -27,18 +27,15 @@ from dateutil.parser import parse as parseDatetime
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
-    ConfigType,
-    MessagesType,
-    AppToken,
     formatUser,
     formatRepo,
     formatIssue,
     msgify,
-    COMMAND_REGEXES,
-    MESSAGE_REGEXES,
     RAPTOR,
     TAG_MAP,
 )
+from vyxalbot2.types import ConfigType, MessagesType, AppToken
+from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES
 
 __version__ = "2.0.0"
 
@@ -315,6 +312,19 @@ class VyxalBot2(Application):
                     await self.room.send("Nobody to ping.")
                 else:
                     await self.room.send(message)
+            case "cookie":
+                if info := self.userDB.getUserInfo(event.user_id):
+                    if "admin" in info["groups"]:
+                        await self.room.reply(event.message_id, "Here you go: 🍪")
+                        return
+                if random.random() <= 0.75:
+                    await self.room.reply(event.message_id, "Here you go: 🍪")
+                else:
+                    await self.room.reply(event.message_id, "No.")
+            case "hug":
+                await self.room.reply(
+                    event.message_id, random.choice(self.messages["hugs"])
+                )
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -360,7 +370,10 @@ class VyxalBot2(Application):
                         set(
                             filter(
                                 None,
-                                map(lambda i: TAG_MAP.get(i["name"], False), issue["labels"]),
+                                map(
+                                    lambda i: TAG_MAP.get(i["name"], False),
+                                    issue["labels"],
+                                ),
                             )
                         )
                     )

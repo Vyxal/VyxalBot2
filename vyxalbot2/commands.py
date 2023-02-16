@@ -1,0 +1,47 @@
+from typing import Any
+from itertools import chain, repeat
+from datetime import datetime
+from random import choice, random
+
+import signal
+
+from sechat import Room, MessageEvent
+
+from vyxalbot2.userdb import UserDB
+from vyxalbot2.types import MessagesType
+
+COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
+    (
+        r"status( (?P<boring>boring))?",
+        r"((lol )?(yo)?u good( (there )?(my )?(epic )? (bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
+    ): "status",
+    (r"info",): "info",
+    (r"help( (?P<command>.+))?",): "help",
+    (
+        r"coffee (?P<user>.+)",
+        r"(make|brew)( a cup of)? coffee for (?P<user>.+)",
+        r"(make|brew) (?P<user>me) a coffee",
+    ): "coffee",
+    (r"maul (?P<user>.+)",): "maul",
+    (r"die",): "die",
+    (
+        r"permissions (?P<action>list) (?P<user>(\d+)|me)",
+        r"permissions (?P<action>grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",
+    ): "permissions",
+    (r"groups (?P<action>list)", r"groups (?P<action>members) (?P<group>.+)"): "groups",
+    (r"register",): "register",
+    (r"ping (?P<group>.+)(?P<message>.*)",): "ping",
+    (r"(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
+    (r"hug",): "hug",
+}
+MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
+    (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
+    (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
+}
+COMMAND_REGEXES: dict[str, str] = dict(
+    chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())
+)
+MESSAGE_REGEXES: dict[str, str] = dict(
+    chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
+)
+

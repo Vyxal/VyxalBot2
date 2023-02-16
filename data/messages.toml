@@ -1,3 +1,5 @@
+#:schema https://json.schemastore.org/base.json
+
 help = '''
 I'm Vyxal Bot {version} made by Ginger and hyper-neutrino.
 All of my commands start with !!/
@@ -13,6 +15,15 @@ info = """[GitHub Repository](https://github.com/Vyxal/Vyxal/) | \
     [GitHub Organization](https://github.com/Vyxal/)\
     """
 
+hugs = [
+    "⊂((・▽・))⊃",
+    "⊂(◉‿◉)つ",
+    "(づ｡◕‿‿◕｡)づ",
+    "༼ つ ◕_◕ ༽つ",
+    "(つ ͡° ͜ʖ ͡°)つ",
+    "༼ つ ◕o◕ ༽つ"
+]
+
 [commandhelp]
 help = "`!!/help [command name]`: It's a help command."
 info = "`!!/info`: What _is_ Vyxal anyway?"
@@ -23,3 +34,5 @@ maul = "`!!/maul <user>`: THEY'RE COMING"
 coffee = "`!!/coffee <user|me>`: Brew some coffee"
 register = "`!!/register`: Register yourself with the bot. This is required for you to be granted permissions."
 ping = "`!!/ping <group> [message]`: Ping all members of the group. USE WITH CAUTION!"
+cookie = "`!!/cookie`: Make you a cookie. Maybe. You have to be worthy."
+hug = "`!!/hug`: <3"
