@@ -366,7 +366,7 @@ class VyxalBot2(Application):
                         return await self.runCommand(
                             room, event, command, match.groupdict()
                         )
-                await self.room.send(
+                return await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
