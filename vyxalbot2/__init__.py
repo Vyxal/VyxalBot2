@@ -2,6 +2,7 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
+from asyncio import TimeoutError
 
 import logging
 import sys
@@ -14,7 +15,7 @@ import re
 import tomli
 
 from aiohttp import ClientSession
-from aiohttp.web import Application, Request, Response, GracefulExit, run_app
+from aiohttp.web import Application, Request, Response, run_app
 from sechat import Bot, Room, MessageEvent, EventType
 from gidgethub import HTTPException as GitHubHTTPException
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
@@ -350,10 +351,15 @@ class VyxalBot2(Application):
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
                         },
-                        oauth_token = (await self.appToken(self.gh)).token
+                        oauth_token=(await self.appToken(self.gh)).token,
                     )
                 except GitHubHTTPException as e:
-                    await self.room.reply(event.message_id, f"Failed to create issue: {e.status_code.value} {e.status_code.description}")
+                    await self.room.reply(
+                        event.message_id,
+                        f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
+                    )
+            case "run":
+                pass  # TODO
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:

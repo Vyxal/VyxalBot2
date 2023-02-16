@@ -35,6 +35,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"hug",): "hug",
     (r"repo(sitories|s)?",): "repo-list",
     (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)",): "issue-open",
+    (r"run <code>(?P<code>.+)<\/code>",): "run"
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
