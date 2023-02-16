@@ -354,6 +354,8 @@ class VyxalBot2(Application):
                     )
                 except GitHubHTTPException as e:
                     await self.room.reply(event.message_id, f"Failed to create issue: {e.status_code.value} {e.status_code.description}")
+            case "sus":
+                await self.room.reply(event.message_id, "ඞ" * random.randint(0, 10))
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -367,6 +369,9 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
+            for regex, command in MESSAGE_REGEXES.items():
+                if match := re.fullmatch(regex, event.content):
+                    await self.runCommand(room, event, command, match.groupdict())
         except Exception:
             msg = (
                 f"@Ginger An error occurred while handling message {event.message_id}!"

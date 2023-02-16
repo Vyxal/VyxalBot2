@@ -33,12 +33,14 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"ping (?P<group>.+)(?P<message>.*)",): "ping",
     (r"(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
     (r"hug",): "hug",
+    (r"sus",): "sus",
     (r"repo(sitories|s)?",): "repo-list",
     (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)",): "issue-open",
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
+    (r".+(su+s(sy)?|amon?g ?us).+",): "sus"
 }
 COMMAND_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())
