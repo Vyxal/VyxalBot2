@@ -469,7 +469,7 @@ class VyxalBot2(Application):
                     f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "unassigned":
-                pullRequest = event.data["issue"]
+                pullRequest = event.data["pull_request"]
                 assignee = event.data["assignee"]
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {event.data["sender"]["login"]} in {event.data["repository"]["html_url"]}'
