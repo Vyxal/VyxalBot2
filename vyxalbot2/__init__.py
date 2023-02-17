@@ -18,7 +18,7 @@ from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
 from aiohttp.client_exceptions import ContentTypeError
 from sechat import Bot, Room, MessageEvent, EventType
-from gidgethub import HTTPException as GitHubHTTPException
+from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.abc import GitHubAPI
 from gidgethub.routing import Router
@@ -383,7 +383,7 @@ class VyxalBot2(Application):
             case "issue-open":
                 try:
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{args.get('repo', 'Vyxal')}/issues",
+                        f"/repos/{self.config['account']}/{(args['repo'] if args['repo'] else self.config['baseRepo'])}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
@@ -409,6 +409,35 @@ class VyxalBot2(Application):
                     event.message_id,
                     f"You are {'' if event.user_id == 354515 else 'not '}lyxal.",
                 )
+            case "prod":
+                if (
+                    repo := (args["repo"] if args["repo"] else self.config["baseRepo"])
+                ) not in self.config["production"].keys():
+                    return await self.room.reply(
+                        event.message_id,
+                        f"That repository isn't listed in config.json.",
+                    )
+                try:
+                    await self.gh.post(
+                            f"/repos/{self.config['account']}/{repo}/pulls",
+                            data={
+                                "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
+                                "head": self.config["production"][repo]["head"],
+                                "base": self.config["production"][repo]["base"],
+                                "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id})'}.",
+                            },
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                except ValidationError as e:
+                    await self.room.reply(
+                        event.message_id,
+                        f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}",
+                    )
+                except GitHubHTTPException as e:
+                    await self.room.reply(
+                        event.message_id,
+                        f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
+                    )
             case "run":
                 task = create_task(self.runVyxalCommand(event, args))
                 task.add_done_callback(self.runningTasks.discard)

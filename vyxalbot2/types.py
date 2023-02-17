@@ -7,11 +7,15 @@ class GroupType(TypedDict, total=False):
     promotionRequires: list[str]
     canRun: list[str]
 
+class ProductionType(TypedDict):
+    head: str
+    base: str
 
 class ConfigType(TypedDict):
     port: int
 
     account: str
+    baseRepo: str
     appID: str
     pem: str
     webhookSecret: str
@@ -24,6 +28,8 @@ class ConfigType(TypedDict):
     importantRepositories: list[str]
 
     groups: dict[str, GroupType]
+
+    production: dict[str, ProductionType]
 
 
 class MessagesType(TypedDict):
