@@ -386,7 +386,7 @@ class VyxalBot2(Application):
                                 "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
                                 "head": self.config["production"][repo]["head"],
                                 "base": self.config["production"][repo]["base"],
-                                "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'}.",
+                                "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id})'}.",
                             },
                             oauth_token=(await self.appToken(self.gh)).token,
                         )
