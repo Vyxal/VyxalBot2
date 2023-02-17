@@ -23,10 +23,13 @@ class UserDB:
         self._db.remove(Query().chatID == user)
 
     def addUserToGroup(self, user: Document, group: str):
+        if group in user["groups"]:
+            return False
         user["groups"].append(group)
         self._db.update(
             {"groups": user["groups"]}, Query().chatID == user["chatID"]
         )
+        return True
 
     def removeUserFromGroup(self, user: Document, group: str):
         user["groups"].remove(group)

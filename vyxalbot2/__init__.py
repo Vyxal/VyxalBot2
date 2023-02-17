@@ -202,11 +202,16 @@ class VyxalBot2(Application):
                     )
                     return
                 if action == "grant":
-                    self.userDB.addUserToGroup(target, args["permission"])
-                    await self.room.reply(
-                        event.message_id,
-                        f"User {target['name']} is now a member of group {args['permission']}.",
-                    )
+                    if self.userDB.addUserToGroup(target, args["permission"]):
+                        await self.room.reply(
+                            event.message_id,
+                            f"User {target['name']} is now a member of group {args['permission']}.",
+                        )
+                    else:
+                        await self.room.reply(
+                            event.message_id,
+                            f"User {target['name']} is already a member of group {args['permission']}.",
+                        )
                 else:
                     self.userDB.removeUserFromGroup(target, args["permission"])
                     await self.room.reply(
