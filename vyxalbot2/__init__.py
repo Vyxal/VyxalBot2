@@ -449,6 +449,10 @@ class VyxalBot2(Application):
                 )
             case "good-bot":
                 await self.room.send(":3")
+            case "hello":
+                await self.room.reply(event.message_id, random.choice(self.messages["hello"]))
+            case "goodbye":
+                await self.room.reply(event.message_id, random.choice(self.messages["goodbye"]))
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:

@@ -35,6 +35,8 @@ class ConfigType(TypedDict):
 class MessagesType(TypedDict):
     help: str
     info: str
+    hello: str
+    goodbye: str
     hugs: list[str]
     commandhelp: dict[str, str]
 
