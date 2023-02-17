@@ -35,7 +35,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
-    (r"(.* |^)(who|what) (did|done) (that|this|it).*", r".*whodunit"): "blame"
+    (r"(.* |^)(who|what) (did|done) (that|this|it).*", r".*whodunit"): "blame",
     (r"good bot",): "good-bot"
 }
 COMMAND_REGEXES: dict[str, str] = dict(
