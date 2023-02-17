@@ -419,15 +419,15 @@ class VyxalBot2(Application):
                     )
                 try:
                     await self.gh.post(
-                            f"/repos/{self.config['account']}/{repo}/pulls",
-                            data={
-                                "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
-                                "head": self.config["production"][repo]["head"],
-                                "base": self.config["production"][repo]["base"],
-                                "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id})'}.",
-                            },
-                            oauth_token=(await self.appToken(self.gh)).token,
-                        )
+                        f"/repos/{self.config['account']}/{repo}/pulls",
+                        data={
+                            "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
+                            "head": self.config["production"][repo]["head"],
+                            "base": self.config["production"][repo]["base"],
+                            "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id})'}.",
+                        },
+                        oauth_token=(await self.appToken(self.gh)).token,
+                    )
                 except ValidationError as e:
                     await self.room.reply(
                         event.message_id,
@@ -443,7 +443,12 @@ class VyxalBot2(Application):
                 task.add_done_callback(self.runningTasks.discard)
                 self.runningTasks.add(task)
             case "blame":
-                await self.room.reply(event.message_id, f"It was {random.choice(self.userDB.users())['name']}'s fault!")
+                await self.room.reply(
+                    event.message_id,
+                    f"It was {random.choice(self.userDB.users())['name']}'s fault!",
+                )
+            case "good-bot":
+                await self.room.send(":3")
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
