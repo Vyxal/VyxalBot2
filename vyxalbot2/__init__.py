@@ -2,7 +2,7 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
-from asyncio import TimeoutError
+from asyncio import TimeoutError, wait_for
 
 import logging
 import sys
@@ -38,6 +38,7 @@ from vyxalbot2.util import (
 )
 from vyxalbot2.types import ConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES
+from vyxalbot2.ato import ATO
 
 __version__ = "2.0.0"
 
@@ -368,6 +369,11 @@ class VyxalBot2(Application):
                 await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
             case "amilyxal":
                 await self.room.reply(event.message_id, f"You are {'' if event.user_id == 354515 else 'not '}lyxal.")
+            case "run":
+                try:
+                    result = await wait_for(ATO().run("vyxal", args["code"]), 15)
+                except TimeoutError:
+                    await self.room.reply(event.message_id, "Timed out after 15 seconds.")
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
