@@ -1,19 +1,9 @@
-from typing import Any
 from itertools import chain, repeat
-from datetime import datetime
-from random import choice, random
-
-import signal
-
-from sechat import Room, MessageEvent
-
-from vyxalbot2.userdb import UserDB
-from vyxalbot2.types import MessagesType
 
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
         r"status( (?P<boring>boring))?",
-        r"((lol )?(yo)?u good( (there )?(my )?(epic )? (bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
+        r"((lol )?(yo)?u good( (there )?(my )?(epic )?(bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
     ): "status",
     (r"info",): "info",
     (r"help( (?P<command>.+))?",): "help",
