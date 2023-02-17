@@ -435,26 +435,26 @@ class VyxalBot2(Application):
             case "assigned":
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Issue {issue["number"]} assigned to {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
+                    f'Issue {issue["number"]} assigned to {assignee["login"]} by {event.data["sender"]["login"]} in {issue["repository_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(issue["user"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
             case "unassigned":
                 issue = event.data["issue"]
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Issue {issue["number"]} unassigned from {assignee["login"]} by {issue["user"]["login"]} in {issue["repository_url"]}'
+                    f'Issue {issue["number"]} unassigned from {assignee["login"]} by {event.data["sender"]["login"]} in {issue["repository_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(issue["user"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
             case _ as action if action in ["closed", "opened", "reopened"]:
                 self.logger.info(
                     f'Issue {issue["number"]} {action} in {issue["repository_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(issue["user"])} {action} issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} {action} issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
 
     async def onPRAction(self, event: GitHubEvent, gh: GitHubAPI):
@@ -463,37 +463,37 @@ class VyxalBot2(Application):
             case "assigned":
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
+                    f'Pull request {pullRequest["number"]} assigned to {assignee["login"]} by {event.data["sender"]["login"]} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(pullRequest["user"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "unassigned":
                 pullRequest = event.data["issue"]
                 assignee = event.data["assignee"]
                 self.logger.info(
-                    f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {pullRequest["user"]["login"]} in {event.data["repository"]["html_url"]}'
+                    f'Pull request {pullRequest["number"]} unassigned from {assignee["login"]} by {event.data["sender"]["login"]} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(pullRequest["user"])} unassigned {formatUser(assignee)} from pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} unassigned {formatUser(assignee)} from pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "closed":
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} {"merged" if pullRequest["merged"] else "closed"} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(pullRequest["user"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "review_requested":
                 await self.room.send(
-                    f'{formatUser(pullRequest["user"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
+                    f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
                 )
             case _ as action if action in ["opened", "reopened", "enqueued"]:
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
                 )
                 await self.room.send(
-                    f'{formatUser(pullRequest["user"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
+                    f'{formatUser(event.data["sender"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
                 if action == "opened":
                     await self.autoTag(event, gh)
