@@ -36,3 +36,6 @@ class UserDB:
 
     def membersOfGroup(self, group: str):
         return self._db.search(Query().groups.any([group]))
+    
+    def users(self):
+        return self._db.all()

@@ -28,12 +28,14 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)",): "issue-open",
     (r"prod(uction)?( (?P<repo>\w+))?",): "prod",
     (r"run( (?P<flags>-.+))? <code>(?P<code>.+)<\/code>",): "run",
-    (r"amilyxal",): "amilyxal"
+    (r"amilyxal",): "amilyxal",
+    (r"blame",): "blame"
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
-    (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus"
+    (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
+    (r".* (who|what) (did|done) (that|this|it).*", r".*whodunit"): "blame"
 }
 COMMAND_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())

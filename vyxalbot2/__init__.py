@@ -442,6 +442,8 @@ class VyxalBot2(Application):
                 task = create_task(self.runVyxalCommand(event, args))
                 task.add_done_callback(self.runningTasks.discard)
                 self.runningTasks.add(task)
+            case "blame":
+                await self.room.reply(event.message_id, f"It was {random.choice(self.userDB.users())['name']}'s fault!")
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
