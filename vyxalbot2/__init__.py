@@ -360,8 +360,6 @@ class VyxalBot2(Application):
                     )
             case "sus":
                 await self.room.reply(event.message_id, "ඞ" * random.randint(0, 10))
-            case "run":
-                pass  # TODO
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
