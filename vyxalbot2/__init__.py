@@ -2,7 +2,7 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
-from asyncio import TimeoutError
+from asyncio import create_task
 
 import logging
 import sys
@@ -16,6 +16,7 @@ import tomli
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
+from aiohttp.client_exceptions import ContentTypeError
 from sechat import Bot, Room, MessageEvent, EventType
 from gidgethub import HTTPException as GitHubHTTPException
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
@@ -67,6 +68,7 @@ class VyxalBot2(Application):
         self.cache = LRUCache(maxsize=5000)
         self.ghRouter = Router()
         self.gh = AsyncioGitHubAPI(self.session, "VyxalBot2", cache=self.cache)
+        self.runningTasks = set()
 
         with open(self.config["pem"], "r") as f:
             self.privkey = f.read()
@@ -210,6 +212,42 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id,
                         f"User {target['name']} is no longer a member of group {args['permission']}.",
+                    )
+
+    async def runVyxalCommand(self, event: MessageEvent, args: dict[str, Any]):
+        async with self.session.get(
+            "https://vyxal.pythonanywhere.com/session"
+        ) as sessionData:
+            messageID = await self.room.reply(event.message_id, "Running...")
+            async with self.session.post(
+                f"https://vyxal.pythonanywhere.com/execute",
+                data=json.dumps(
+                    {
+                        "code": args["code"],
+                        "flags": args["flags"] if args["flags"] else "",
+                        "footer": "",
+                        "header": "",
+                        "inputs": "",
+                        "session": await sessionData.text(),
+                    }
+                ),
+                headers={"Content-Type": "application/json"},
+            ) as result:
+                message = ""
+                try:
+                    responseJson = await result.json()
+                except ContentTypeError:
+                    await self.room.edit(
+                        messageID,
+                        f":{event.message_id} An error occured: " + await result.text(),
+                    )
+                else:
+                    if responseJson["stdout"]:
+                        message += "stdout:\n" + responseJson["stdout"].strip()
+                    if responseJson["stderr"]:
+                        message += "\nstderr:\n" + responseJson["stderr"].strip()
+                    await self.room.edit(
+                        messageID, f":{event.message_id} " + message.strip()
                     )
 
     async def runCommand(
@@ -367,7 +405,14 @@ class VyxalBot2(Application):
                     return
                 await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
             case "amilyxal":
-                await self.room.reply(event.message_id, f"You are {'' if event.user_id == 354515 else 'not '}lyxal.")
+                await self.room.reply(
+                    event.message_id,
+                    f"You are {'' if event.user_id == 354515 else 'not '}lyxal.",
+                )
+            case "run":
+                task = create_task(self.runVyxalCommand(event, args))
+                task.add_done_callback(self.runningTasks.discard)
+                self.runningTasks.add(task)
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
