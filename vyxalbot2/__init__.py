@@ -366,6 +366,8 @@ class VyxalBot2(Application):
                 ):
                     return
                 await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
+            case "amilyxal":
+                await self.room.reply(event.message_id, f"You are {'' if event.user_id == 354515 else 'not '}lyxal.")
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
