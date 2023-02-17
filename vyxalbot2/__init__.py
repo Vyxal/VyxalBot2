@@ -338,7 +338,7 @@ class VyxalBot2(Application):
                             for user in self.userDB.membersOfGroup(args["group"])
                         ]
                     )
-                    + args["message"]
+                    + " " + args["message"]
                 ):
                     await self.room.send("Nobody to ping.")
                 else:
