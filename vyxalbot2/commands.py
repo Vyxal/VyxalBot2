@@ -41,7 +41,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
-    (r".*(su+s(sy)?|amon?g ?us).*",): "sus"
+    (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus"
 }
 COMMAND_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())

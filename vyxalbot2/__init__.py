@@ -359,7 +359,13 @@ class VyxalBot2(Application):
                         f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
                     )
             case "sus":
-                await self.room.reply(event.message_id, "ඞ" * random.randint(0, 10))
+                if (
+                    "__msg__" in args
+                    and random.random() >= 0.25
+                    and event.user_id != self.room.userID
+                ):
+                    return
+                await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -375,7 +381,9 @@ class VyxalBot2(Application):
                 )
             for regex, command in MESSAGE_REGEXES.items():
                 if match := re.fullmatch(regex, event.content):
-                    await self.runCommand(room, event, command, match.groupdict())
+                    await self.runCommand(
+                        room, event, command, match.groupdict() | {"__msg__": True}
+                    )
         except Exception:
             msg = (
                 f"@Ginger An error occurred while handling message {event.message_id}!"
