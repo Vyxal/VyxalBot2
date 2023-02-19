@@ -1,0 +1,56 @@
+#:schema https://json.schemastore.org/base.json
+
+help = '''
+I'm Vyxal Bot {version} made by Ginger and hyper-neutrino.
+All of my commands start with !!/
+If you want help for a specific command, do !!/help <command name>.
+New to Vyxal? Try !!/info for more information.
+
+Command list: '''
+info = """[GitHub Repository](https://github.com/Vyxal/Vyxal/) | \
+    [Online Interpreter](https://vyxal.pythonanywhere.com) | \
+    [Tutorial](https://github.com/Vyxal/Vyxal/blob/master/docs/Tutorial.md) | \
+    [Vyxapedia](https://vyxapedia.hyper-neutrino.xyz) | \
+    [List of elements](https://github.com/Vyxal/Vyxal/blob/main/documents/knowledge/elements.md) | \
+    [GitHub Organization](https://github.com/Vyxal/)\
+    """
+
+hugs = [
+    "⊂((・▽・))⊃",
+    "⊂(◉‿◉)つ",
+    "(づ｡◕‿‿◕｡)づ",
+    "༼ つ ◕_◕ ༽つ",
+    "(つ ͡° ͜ʖ ͡°)つ",
+    "༼ つ ◕o◕ ༽つ"
+]
+
+hello = [
+    "hello!",
+    "hi!",
+    "greetings"
+]
+goodbye = [
+    "\\o",
+    "bye!",
+    "adios"
+]
+
+[commandhelp]
+help = "`!!/help [command name]`: It's a help command."
+info = "`!!/info`: What _is_ Vyxal anyway?"
+status = "`!!/status`: I will tell you what I'm doing (maybe). If you don't have a sense of humor and/or are a bot developer, run !!/status boring for actual status information."
+permissions = "`!!/permissions <list|grant|revoke> <user ID|me> [permission]`: Grant, revoke, or list user permissions."
+groups = "`!!/groups <list|members> [group]`: List all groups or members of a certain group."
+maul = "`!!/maul <user>`: THEY'RE COMING"
+coffee = "`!!/coffee <user|me>`: Brew some coffee"
+register = "`!!/register`: Register yourself with the bot. This is required for you to be granted permissions."
+ping = "`!!/ping <group> [message]`: Ping all members of the group. USE WITH CAUTION!"
+cookie = "`!!/cookie`: Make you a cookie. Maybe. You have to be worthy."
+hug = "`!!/hug`: <3"
+repositories = "`!!/repositories`: List all organization repositories."
+issue = "`!!/issue open [in <repo name>] __Name__ description`: Open an issue in a repository (defaults to Vyxal)."
+sus = "`!!/sus`: ඞඞඞඞඞඞඞඞඞඞඞ"
+prod = "`!!/prod(uction)? [repo name]`: Open a pull request from main to production."
+blame = "`!!/blame`: Whose fault is it?"
+hello = "`!!/hello`: Hello!"
+goodbye = "`!!/goodbye`: Goodbye!"
