@@ -303,7 +303,7 @@ class VyxalBot2(Application):
                     )
                 else:
                     await self.room.reply(
-                        event.message_id, "I am doing " + random.choice(self.statuses)
+                        event.message_id, random.choice(self.statuses)
                     )
             case "permissions":
                 await self.permissionsCommand(event, args)
