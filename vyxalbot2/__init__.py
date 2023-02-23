@@ -444,6 +444,8 @@ class VyxalBot2(Application):
                         f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
                     )
             case "run":
+                await self.room.reply(event.message_id, "This command is disabled.")
+                return
                 task = create_task(self.runVyxalCommand(event, args))
                 task.add_done_callback(self.runningTasks.discard)
                 self.runningTasks.add(task)
