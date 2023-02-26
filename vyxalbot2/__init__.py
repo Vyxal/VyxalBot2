@@ -296,10 +296,13 @@ class VyxalBot2(Application):
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
             case "status":
-                if args.get("boring", ""):
+                if args.get("boring", "") or args.get("exciting", ""):
+                    msg = f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}"
+                    if args.get("exciting", ""):
+                        msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
                     await self.room.reply(
                         event.message_id,
-                        f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}",
+                        msg
                     )
                 else:
                     await self.room.reply(

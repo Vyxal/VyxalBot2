@@ -2,7 +2,7 @@ from itertools import chain, repeat
 
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
-        r"status( (?P<boring>boring))?",
+        r"status( (?P<boring>boring)|(?P<exciting>exciting))?",
         r"((lol )?(yo)?u good( (there )?(my )?(epic )?(bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
     ): "status",
     (r"info",): "info",
@@ -16,7 +16,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"die",): "die",
     (
         r"permissions (?P<action>list) (?P<user>(\d+)|me)",
-        r"permissions (?P<action>grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",
+        r"permissions (?P<action>grant|revoke) (?P<user>(\d+)|me)( (?P<permission`>.+))?",
     ): "permissions",
     (r"groups (?P<action>list)", r"groups (?P<action>members) (?P<group>.+)"): "groups",
     (r"register",): "register",
