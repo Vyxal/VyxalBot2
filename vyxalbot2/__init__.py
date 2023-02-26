@@ -580,6 +580,7 @@ class VyxalBot2(Application):
                     f'{formatUser(event.data["sender"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "review_requested":
+                return # user doesn't want this apparently
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
                 )
