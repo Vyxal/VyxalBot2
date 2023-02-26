@@ -16,7 +16,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"die",): "die",
     (
         r"permissions (?P<action>list) (?P<user>(\d+)|me)",
-        r"permissions (?P<action>grant|revoke) (?P<user>(\d+)|me)( (?P<permission`>.+))?",
+        r"permissions (?P<action>grant|revoke) (?P<user>(\d+)|me)( (?P<permission>.+))?",
     ): "permissions",
     (r"groups (?P<action>list)", r"groups (?P<action>members) (?P<group>.+)"): "groups",
     (r"register",): "register",
