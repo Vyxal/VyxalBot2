@@ -2,7 +2,7 @@ from itertools import chain, repeat
 
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
-        r"status( (?P<boring>boring)| (?P<exciting>exciting))?",
+        r"status( (?P<mood>boring|exciting|tingly|sleepy|cryptic|goofy))?",
         r"((lol )?(yo)?u good( (there )?(my )?(epic )?(bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
     ): "status",
     (r"info",): "info",
