@@ -11,6 +11,7 @@ import os
 import signal
 import random
 import re
+import codecs
 
 import tomli
 
@@ -27,6 +28,7 @@ from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 from platformdirs import user_state_path
 from dateutil.parser import parse as parseDatetime
+from uwuipy import uwuipy
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
@@ -296,10 +298,22 @@ class VyxalBot2(Application):
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
             case "status":
-                if args.get("boring", "") or args.get("exciting", ""):
+                if args.get("mood", ""):
                     msg = f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}"
-                    if args.get("exciting", ""):
-                        msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
+                    match args.get("mood", ""):
+                        case "boring":
+                            pass
+                        case "exciting":
+                            msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
+                        case "tingly":
+                            uwu = uwuipy()
+                            msg = uwu.uwuify(msg)
+                        case "sleepy":
+                            msg = "\n".join(msg.splitlines()[:random.randint(1, len(msg.splitlines()))]) + " *yawn*\n" + "z" * random.randint(5, 10)
+                        case "cryptic":
+                            msg = codecs.encode(msg, "rot13")
+                        case "goofy":
+                            msg = "\n".join(map(lambda i: i + "🤓" * random.randint(1, 3), msg.splitlines()))
                     await self.room.reply(
                         event.message_id,
                         msg
