@@ -429,7 +429,7 @@ class VyxalBot2(Application):
             case "amilyxal":
                 await self.room.reply(
                     event.message_id,
-                    f"You are {'' if event.user_id == 354515 && random.random() < 0.9 else 'not '}lyxal.",
+                    f"You are {'' if event.user_id == 354515 ^ random.random() < 0.1 else 'not '}lyxal.",
                 )
             case "prod":
                 if (
