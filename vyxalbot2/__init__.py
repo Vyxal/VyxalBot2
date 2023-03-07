@@ -425,7 +425,10 @@ class VyxalBot2(Application):
                     and event.user_id != self.room.userID
                 ):
                     return
-                await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
+                if random.random() <= 0.25:
+                    await self.room.reply(event.message_id, "___AMONGUS___")
+                else:
+                    await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
             case "amilyxal":
                 await self.room.reply(
                     event.message_id,
