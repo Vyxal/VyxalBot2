@@ -1,5 +1,10 @@
 from itertools import chain, repeat
 
+COMMAND_ALIASES = {
+    "!issue-open": "issue",
+    "!repo-list": "repos"
+}
+
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
         r"status( (?P<mood>boring|exciting|tingly|sleepy|cryptic|goofy))?",

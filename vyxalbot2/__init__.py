@@ -40,7 +40,7 @@ from vyxalbot2.util import (
     TAG_MAP,
 )
 from vyxalbot2.types import ConfigType, MessagesType, AppToken
-from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES
+from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
 
@@ -293,7 +293,7 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id,
                         self.messages["help"].format(version=__version__)
-                        + f"{', '.join(sorted(filter(lambda i: not i.startswith('!'), set(COMMAND_REGEXES.values()))))}",
+                        + f"{', '.join(sorted(map(lambda i: i if not i.startswith('!') else COMMAND_ALIASES[i], set(COMMAND_REGEXES.values()))))}",
                     )
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
