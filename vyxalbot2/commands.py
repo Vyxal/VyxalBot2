@@ -43,7 +43,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
     (r"(.* |^)([Ww]ho|[Ww]hat) (did|done) (that|this|it).*", r".*whodunit"): "blame",
-    (r"(very |super |ultra |extremely )*good bot!*",): "!good-bot",
+    (r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",): "!good-bot",
     (r"(hello|howdy|mornin['g]|evenin['g])( y'?all)?",): "hello",
     (r"((good)?bye|see ya\!?|'night|goodnight)( y'?all)?",): "goodbye"
 }

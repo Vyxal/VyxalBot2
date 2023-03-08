@@ -404,7 +404,7 @@ class VyxalBot2(Application):
                 )
             case "!issue-open":
                 try:
-                    repo = args['repo'] if args['repo'] else self.config['baseRepo']
+                    repo = args['repo'] or self.config['baseRepo']
                     if args['labels']:
                         validLabels = [item async for item in self.gh.getiter(f"/repos/{self.config['account']}/{repo}/labels", oauth_token=(await self.appToken(self.gh)).token)]
                         if not all(label in validLabels for label in args['labels'].split(' ')):
