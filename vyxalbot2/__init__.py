@@ -306,7 +306,7 @@ class VyxalBot2(Application):
                         case "exciting":
                             msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
                         case "tingly":
-                            uwu = uwuipy()
+                            uwu = uwuipy(None, 0.3, 0.2, 0.2, 1) # type: ignore Me when the developers of uwuipy don't annotate their types correctly
                             msg = uwu.uwuify(msg)
                         case "sleepy":
                             msg = "\n".join(msg.splitlines()[:random.randint(1, len(msg.splitlines()))]) + " *yawn*\n" + "z" * random.randint(5, 10)
@@ -425,10 +425,7 @@ class VyxalBot2(Application):
                     and event.user_id != self.room.userID
                 ):
                     return
-                if random.random() <= 0.25:
-                    await self.room.reply(event.message_id, "___AMONGUS___")
-                else:
-                    await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
+                await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
             case "amilyxal":
                 await self.room.reply(
                     event.message_id,
