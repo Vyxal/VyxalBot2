@@ -293,7 +293,7 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id,
                         self.messages["help"].format(version=__version__)
-                        + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}",
+                        + f"{', '.join(sorted(filter(lambda i: not i.startswith('!'), set(COMMAND_REGEXES.values()))))}",
                     )
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
@@ -387,7 +387,7 @@ class VyxalBot2(Application):
                 await self.room.reply(
                     event.message_id, random.choice(self.messages["hugs"])
                 )
-            case "repo-list":
+            case "!repo-list":
                 await self.room.reply(
                     event.message_id,
                     "Repositories: "
@@ -402,7 +402,7 @@ class VyxalBot2(Application):
                         ][:5]
                     ),
                 )
-            case "issue-open":
+            case "!issue-open":
                 try:
                     await self.gh.post(
                         f"/repos/{self.config['account']}/{(args['repo'] if args['repo'] else self.config['baseRepo'])}/issues",
@@ -471,7 +471,7 @@ class VyxalBot2(Application):
                     event.message_id,
                     f"It was {random.choice(self.userDB.users())['name']}'s fault!",
                 )
-            case "good-bot":
+            case "!good-bot":
                 await self.room.send(":3")
             case "hello":
                 await self.room.reply(event.message_id, random.choice(self.messages["hello"]))
