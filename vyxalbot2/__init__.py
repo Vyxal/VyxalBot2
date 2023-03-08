@@ -404,12 +404,18 @@ class VyxalBot2(Application):
                 )
             case "!issue-open":
                 try:
+                    repo = args['repo'] if args['repo'] else self.config['baseRepo']
+                    if args['labels']:
+                        validLabels = [item async for item in self.gh.getiter(f"/repos/{self.config['account']}/{repo}/labels", oauth_token=(await self.appToken(self.gh)).token)]
+                        if not all(label in validLabels for label in args['labels'].split(' ')):
+                            return await self.room.reply(event.message_id, "Invalid label!")
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{(args['repo'] if args['repo'] else self.config['baseRepo'])}/issues",
+                        f"/repos/{self.config['account']}/{repo}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
+                            "labels": args['labels'].split(' ')
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )

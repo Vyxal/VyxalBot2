@@ -25,7 +25,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"hug",): "hug",
     (r"sus",): "sus",
     (r"repo(sitories|s)?",): "!repo-list",
-    (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)",): "!issue-open",
+    (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)( <code>(?P<labels>.+)<\/code>)?",): "!issue-open",
     (r"prod(uction)?( (?P<repo>\w+))?",): "prod",
     (r"run( (?P<flags>-.+))? <code>(?P<code>.+)<\/code>",): "run",
     (r"amilyxal",): "amilyxal",
