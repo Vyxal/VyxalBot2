@@ -409,6 +409,12 @@ class VyxalBot2(Application):
                         validLabels = [item async for item in self.gh.getiter(f"/repos/{self.config['account']}/{repo}/labels", oauth_token=(await self.appToken(self.gh)).token)]
                         if not all(label in validLabels for label in args['labels'].split(' ')):
                             return await self.room.reply(event.message_id, "Invalid label!")
+                    # ICKY SPECIAL CASING
+                    if repo == "Vyxal":
+                        if not isinstance(args['labels'], str):
+                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
+                        if "version-3" not in args['labels'].split(' ') and "version-2" not in args['labels'].split(' '):
+                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
                     await self.gh.post(
                         f"/repos/{self.config['account']}/{repo}/issues",
                         data={
