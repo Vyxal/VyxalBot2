@@ -40,7 +40,7 @@ from vyxalbot2.util import (
     TAG_MAP,
 )
 from vyxalbot2.types import ConfigType, MessagesType, AppToken
-from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES
+from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
 
@@ -293,7 +293,7 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id,
                         self.messages["help"].format(version=__version__)
-                        + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}",
+                        + f"{', '.join(sorted(map(lambda i: i if not i.startswith('!') else COMMAND_ALIASES[i], set(COMMAND_REGEXES.values()))))}",
                     )
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
@@ -306,7 +306,7 @@ class VyxalBot2(Application):
                         case "exciting":
                             msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
                         case "tingly":
-                            uwu = uwuipy()
+                            uwu = uwuipy(None, 0.3, 0.2, 0.2, 1) # type: ignore Me when the developers of uwuipy don't annotate their types correctly
                             msg = uwu.uwuify(msg)
                         case "sleepy":
                             msg = "\n".join(msg.splitlines()[:random.randint(1, len(msg.splitlines()))]) + " *yawn*\n" + "z" * random.randint(5, 10)
@@ -387,7 +387,7 @@ class VyxalBot2(Application):
                 await self.room.reply(
                     event.message_id, random.choice(self.messages["hugs"])
                 )
-            case "repo-list":
+            case "!repo-list":
                 await self.room.reply(
                     event.message_id,
                     "Repositories: "
@@ -402,14 +402,26 @@ class VyxalBot2(Application):
                         ][:5]
                     ),
                 )
-            case "issue-open":
+            case "!issue-open":
                 try:
+                    repo = args['repo'] or self.config['baseRepo']
+                    if args['labels']:
+                        validLabels = [item async for item in self.gh.getiter(f"/repos/{self.config['account']}/{repo}/labels", oauth_token=(await self.appToken(self.gh)).token)]
+                        if not all(label in validLabels for label in args['labels'].split(' ')):
+                            return await self.room.reply(event.message_id, "Invalid label!")
+                    # ICKY SPECIAL CASING
+                    if repo == "Vyxal":
+                        if not isinstance(args['labels'], str):
+                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
+                        if "version-3" not in args['labels'].split(' ') and "version-2" not in args['labels'].split(' '):
+                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{(args['repo'] if args['repo'] else self.config['baseRepo'])}/issues",
+                        f"/repos/{self.config['account']}/{repo}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
+                            "labels": args['labels'].split(' ')
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
@@ -425,10 +437,7 @@ class VyxalBot2(Application):
                     and event.user_id != self.room.userID
                 ):
                     return
-                if random.random() <= 0.25:
-                    await self.room.reply(event.message_id, "___AMONGUS___")
-                else:
-                    await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
+                await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
             case "amilyxal":
                 await self.room.reply(
                     event.message_id,
@@ -474,7 +483,7 @@ class VyxalBot2(Application):
                     event.message_id,
                     f"It was {random.choice(self.userDB.users())['name']}'s fault!",
                 )
-            case "good-bot":
+            case "!good-bot":
                 await self.room.send(":3")
             case "hello":
                 await self.room.reply(event.message_id, random.choice(self.messages["hello"]))

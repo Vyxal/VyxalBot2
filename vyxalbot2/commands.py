@@ -1,5 +1,10 @@
 from itertools import chain, repeat
 
+COMMAND_ALIASES = {
+    "!issue-open": "issue",
+    "!repo-list": "repos"
+}
+
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
         r"status( (?P<mood>boring|exciting|tingly|sleepy|cryptic|goofy))?",
@@ -24,8 +29,8 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
     (r"hug",): "hug",
     (r"sus",): "sus",
-    (r"repo(sitories|s)?",): "repo-list",
-    (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)",): "issue-open",
+    (r"repo(sitories|s)?",): "!repo-list",
+    (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)( <code>(?P<labels>.+)<\/code>)?",): "!issue-open",
     (r"prod(uction)?( (?P<repo>\w+))?",): "prod",
     (r"run( (?P<flags>-.+))? <code>(?P<code>.+)<\/code>",): "run",
     (r"amilyxal",): "amilyxal",
@@ -38,7 +43,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
     (r"(.* |^)([Ww]ho|[Ww]hat) (did|done) (that|this|it).*", r".*whodunit"): "blame",
-    (r"good bot",): "good-bot",
+    (r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",): "!good-bot",
     (r"(hello|howdy|mornin['g]|evenin['g])( y'?all)?",): "hello",
     (r"((good)?bye|see ya\!?|'night|goodnight)( y'?all)?",): "goodbye"
 }
