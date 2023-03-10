@@ -1,9 +1,6 @@
 from itertools import chain, repeat
 
-COMMAND_ALIASES = {
-    "!issue-open": "issue",
-    "!repo-list": "repos"
-}
+COMMAND_ALIASES = {"!issue-open": "issue", "!repo-list": "repos"}
 
 COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
@@ -30,22 +27,30 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"hug",): "hug",
     (r"sus",): "sus",
     (r"repo(sitories|s)?",): "!repo-list",
-    (r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)( <code>(?P<labels>.+)<\/code>)?",): "!issue-open",
+    (
+        r"issue open (in (?P<repo>\w+) )?<b>(?P<title>.+)<\/b> (?P<content>.+)( <code>(?P<labels>.+)<\/code>)?",
+    ): "!issue-open",
     (r"prod(uction)?( (?P<repo>\w+))?",): "prod",
     (r"run( (?P<flags>-.+))? <code>(?P<code>.+)<\/code>",): "run",
     (r"amilyxal",): "amilyxal",
     (r"blame",): "blame",
     (r"hello",): "hello",
     (r"(good)?bye",): "goodbye",
+    (
+        r"idiom (?P<action>add) <b>(?P<title>.+)<\/b> <code>(?P<code>.+)<\/code> \"(?P<description>.+)\" (?P<keywords>[a-zA-Z0-9-?!*+=&%>< ]+)",
+        r"idiom (?P<action>search) (?P<keywords>[a-zA-Z0-9-?!*+=&%>< ]+)",
+    ): "idiom",
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
     (r"(.* |^)([Ww]ho|[Ww]hat) (did|done) (that|this|it).*", r".*whodunit"): "blame",
-    (r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",): "!good-bot",
+    (
+        r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",
+    ): "!good-bot",
     (r"(hello|howdy|mornin['g]|evenin['g])( y'?all)?",): "hello",
-    (r"((good)?bye|see ya\!?|'night|goodnight)( y'?all)?",): "goodbye"
+    (r"((good)?bye|see ya\!?|'night|goodnight)( y'?all)?",): "goodbye",
 }
 COMMAND_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())
@@ -53,4 +58,3 @@ COMMAND_REGEXES: dict[str, str] = dict(
 MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
 )
-
