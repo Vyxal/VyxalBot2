@@ -304,20 +304,33 @@ class VyxalBot2(Application):
                         case "boring":
                             pass
                         case "exciting":
-                            msg = "\n".join(line + ("!" * random.randint(2, 5)) for line in msg.upper().splitlines())
+                            msg = "\n".join(
+                                line + ("!" * random.randint(2, 5))
+                                for line in msg.upper().splitlines()
+                            )
                         case "tingly":
-                            uwu = uwuipy(None, 0.3, 0.2, 0.2, 1) # type: ignore Me when the developers of uwuipy don't annotate their types correctly
+                            uwu = uwuipy(None, 0.3, 0.2, 0.2, 1)  # type: ignore Me when the developers of uwuipy don't annotate their types correctly
                             msg = uwu.uwuify(msg)
                         case "sleepy":
-                            msg = "\n".join(msg.splitlines()[:random.randint(1, len(msg.splitlines()))]) + " *yawn*\n" + "z" * random.randint(5, 10)
+                            msg = (
+                                "\n".join(
+                                    msg.splitlines()[
+                                        : random.randint(1, len(msg.splitlines()))
+                                    ]
+                                )
+                                + " *yawn*\n"
+                                + "z" * random.randint(5, 10)
+                            )
                         case "cryptic":
                             msg = codecs.encode(msg, "rot13")
                         case "goofy":
-                            msg = "\n".join(map(lambda i: i + "🤓" * random.randint(1, 3), msg.splitlines()))
-                    await self.room.reply(
-                        event.message_id,
-                        msg
-                    )
+                            msg = "\n".join(
+                                map(
+                                    lambda i: i + "🤓" * random.randint(1, 3),
+                                    msg.splitlines(),
+                                )
+                            )
+                    await self.room.reply(event.message_id, msg)
                 else:
                     await self.room.reply(
                         event.message_id, random.choice(self.statuses)
@@ -404,24 +417,42 @@ class VyxalBot2(Application):
                 )
             case "!issue-open":
                 try:
-                    repo = args['repo'] or self.config['baseRepo']
-                    if args['labels']:
-                        validLabels = [item async for item in self.gh.getiter(f"/repos/{self.config['account']}/{repo}/labels", oauth_token=(await self.appToken(self.gh)).token)]
-                        if not all(label in validLabels for label in args['labels'].split(' ')):
-                            return await self.room.reply(event.message_id, "Invalid label!")
+                    repo = args["repo"] or self.config["baseRepo"]
+                    if args["labels"]:
+                        validLabels = [
+                            item
+                            async for item in self.gh.getiter(
+                                f"/repos/{self.config['account']}/{repo}/labels",
+                                oauth_token=(await self.appToken(self.gh)).token,
+                            )
+                        ]
+                        if not all(
+                            label in validLabels for label in args["labels"].split(" ")
+                        ):
+                            return await self.room.reply(
+                                event.message_id, "Invalid label!"
+                            )
                     # ICKY SPECIAL CASING
                     if repo == "Vyxal":
-                        if not isinstance(args['labels'], str):
-                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
-                        if "version-3" not in args['labels'].split(' ') and "version-2" not in args['labels'].split(' '):
-                            return await self.room.reply(event.message_id, "You must specify one of \"version-2\" or \"version-3\" as a label!")
+                        if not isinstance(args["labels"], str):
+                            return await self.room.reply(
+                                event.message_id,
+                                'You must specify one of "version-2" or "version-3" as a label!',
+                            )
+                        if "version-3" not in args["labels"].split(
+                            " "
+                        ) and "version-2" not in args["labels"].split(" "):
+                            return await self.room.reply(
+                                event.message_id,
+                                'You must specify one of "version-2" or "version-3" as a label!',
+                            )
                     await self.gh.post(
                         f"/repos/{self.config['account']}/{repo}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
-                            "labels": args['labels'].split(' ')
+                            "labels": args["labels"].split(" "),
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
@@ -486,9 +517,13 @@ class VyxalBot2(Application):
             case "!good-bot":
                 await self.room.send(":3")
             case "hello":
-                await self.room.reply(event.message_id, random.choice(self.messages["hello"]))
+                await self.room.reply(
+                    event.message_id, random.choice(self.messages["hello"])
+                )
             case "goodbye":
-                await self.room.reply(event.message_id, random.choice(self.messages["goodbye"]))
+                await self.room.reply(
+                    event.message_id, random.choice(self.messages["goodbye"])
+                )
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -606,7 +641,7 @@ class VyxalBot2(Application):
                     f'{formatUser(event.data["sender"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "review_requested":
-                return # user doesn't want this apparently
+                return  # user doesn't want this apparently
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
                 )
