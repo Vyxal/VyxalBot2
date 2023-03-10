@@ -308,7 +308,7 @@ I am doing brain surgery. I'm qualified, really
 I am doing an audition for the local theater production of 'The Importance of Being Earnest'
 I am doing a new cupboard for my spices. And more importantly, a place to hide my contraband
 I am doing just enough so that you feel guilty about all the things you're not doing
-I am doing "my passion project: creating a chatbot that can beat Radvylf in an argument"
+I am doing "my passion project: creating a chatbot that can beat Rydwolf in an argument"
 I am doing verbose logging to stdout. That way, I can track all the naughty things you do
 I am writing my blog. You should check it out sometime, it's pretty cool
 I am doing a new album. It's called 'How to be a chatbot'. Follow me on spotify!
@@ -463,7 +463,7 @@ What the hell. I burned the gosh dang soft roll. Now I'm all by myself and I hav
 I am letting the tide take care of me
 I am looking in the kitchen. SKINAH why is there smoke in the kitchen? Stop lying skinuherhh
 I am having steamed hams
-I am cooking an unforgettable luncheo HOW DID I EVEN MANAGE TO MESS THIS UP
+I am cooking an unforgettable luncheoHOW DID I EVEN MANAGE TO MESS THIS UP
 I am checking in on what Skinner is doin-- SKINNAH WHAT IS HAPPENING
 You are not going to believe this... I found a sealed off text file - hundreds, HUNDREDS of perfectly good statuses! Just sitting there...filled with typos! Grammarly'd them out, good as new!
 I am playing classical music
@@ -505,3 +505,4 @@ I am annotating the Sus Box.
 I am acquiring your [[HeartShapedObject]]. [Great Deals!] amirite?
 I am hiding from forest.
 I am becoming the next 🅱️avid LLL.
+I am baking your mojis.
