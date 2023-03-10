@@ -476,3 +476,9 @@ I am code golfing. I HAVE to golf. All the time. Or I get this... this ITCH. It 
 I am constructing a 4 part plan: 1) no golfable programs, 2) start the shitposting immediately, 3) cookie-proof shields for me which leads to 4) cookies, for throwing at you
 I am stuck, in space, stranded, just floating around here
 I am doing factory work...Items include: you can buy one
+I am thinking about what times will be maximally annoying to Ginger for me to crash at.
+I am using systemctl.
+I am using Debian.
+I am trying out Rabbit. It's pretty neat, in my unbiased opinion.
+I am trying out `sechat`. It's pretty neat, in my unbiased opinion.
+I am trying out Vyxal. It's pretty neat, in my unbiased opinion.
