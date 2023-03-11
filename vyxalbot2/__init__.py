@@ -3,6 +3,7 @@ from time import time
 from datetime import datetime
 from pathlib import Path
 from asyncio import create_task
+from string import ascii_letters
 
 import logging
 import sys
@@ -333,7 +334,7 @@ class VyxalBot2(Application):
                     await self.room.reply(event.message_id, msg)
                 else:
                     await self.room.reply(
-                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") else i)
+                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") and i.endswith(tuple(ascii_letters)) else i)
                     )
             case "permissions":
                 await self.permissionsCommand(event, args)
