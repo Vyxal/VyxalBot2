@@ -452,7 +452,7 @@ class VyxalBot2(Application):
                             "title": args["title"],
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
-                            "labels": args["labels"].split(" "),
+                            "labels": (args["labels"].split(" ") if args["labels"] else []),
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
