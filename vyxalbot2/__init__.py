@@ -19,7 +19,7 @@ import tomli
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
 from aiohttp.client_exceptions import ContentTypeError
-from sechat import Bot, Room, MessageEvent, EventType
+from sechat import Bot, Room, MessageEvent, EventType, UnknownEvent
 from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.abc import GitHubAPI
@@ -92,12 +92,18 @@ class VyxalBot2(Application):
             self.onReviewSubmitted, "pull_request_review", action="submitted"
         )
 
-        self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
-        self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
+        self.ghRouter.add(
+            self.onRepositoryCreated, "repository", action="created"
+        )
+        self.ghRouter.add(
+            self.onRepositoryDeleted, "repository", action="deleted"
+        )
 
     async def onStartup(self, _):
         await self.bot.authenticate(
-            self.config["SEEmail"], self.config["SEPassword"], self.config["SEHost"]
+            self.config["SEEmail"],
+            self.config["SEPassword"],
+            self.config["SEHost"],
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
@@ -141,7 +147,9 @@ class VyxalBot2(Application):
             event = GitHubEvent.from_http(
                 request.headers, body, secret=self.config["webhookSecret"]
             )
-            self.logger.info(f"Recieved delivery #{event.delivery_id} ({event.event})")
+            self.logger.info(
+                f"Recieved delivery #{event.delivery_id} ({event.event})"
+            )
             if event.event == "ping":
                 return Response(status=200)
             if repo := event.data.get("repository", False):
@@ -162,66 +170,40 @@ class VyxalBot2(Application):
                 pass
             return Response(status=500)
 
-    async def permissionsCommand(self, event: MessageEvent, args: dict[str, Any]):
+    async def permissionsCommand(
+        self, event: MessageEvent, args: dict[str, Any]
+    ) -> Optional[str]:
         target = self.userDB.getUserInfo(
             int(args["user"]) if args["user"] != "me" else event.user_id
         )
         sender = self.userDB.getUserInfo(event.user_id)
         if not sender:
-            await self.room.reply(
-                event.message_id, "You are not in my database. Please run !!/register."
-            )
-            return
+            return "You are not in my database. Please run !!/register."
         if not target:
-            await self.room.reply(event.message_id, "That user is not in my database.")
-            return
+            return "That user is not in my database."
         match args["action"]:
             case "list":
-                await self.room.reply(
-                    event.message_id,
-                    f"User {target['name']} is a member of groups {', '.join(target['groups'])}.",
-                )
+                return f"User {target['name']} is a member of groups {', '.join(target['groups'])}."
             case "grant" | "revoke" as action:
                 if not args.get("permission"):
-                    await self.room.reply(
-                        event.message_id,
-                        "You need to specify a permission!",
-                    )
-                    return
+                    return "You need to specify a permission!"
                 args["permission"] = args["permission"].removesuffix("s")
                 try:
-                    promotionRequires = self.config["groups"][args["permission"]].get(
-                        "promotionRequires", []
-                    )
+                    promotionRequires = self.config["groups"][
+                        args["permission"]
+                    ].get("promotionRequires", [])
                     if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires):  # type: ignore
-                        await self.room.reply(
-                            event.message_id,
-                            "Insufficient permissions!",
-                        )
-                        return
+                        return "Insufficient permissions!"
                 except KeyError:
-                    await self.room.reply(
-                        event.message_id,
-                        "No such group!",
-                    )
-                    return
+                    return "No such group!"
                 if action == "grant":
                     if self.userDB.addUserToGroup(target, args["permission"]):
-                        await self.room.reply(
-                            event.message_id,
-                            f"User {target['name']} is now a member of group {args['permission']}.",
-                        )
+                        return f"User {target['name']} is now a member of group {args['permission']}."
                     else:
-                        await self.room.reply(
-                            event.message_id,
-                            f"User {target['name']} is already a member of group {args['permission']}.",
-                        )
+                        return f"User {target['name']} is already a member of group {args['permission']}."
                 else:
                     self.userDB.removeUserFromGroup(target, args["permission"])
-                    await self.room.reply(
-                        event.message_id,
-                        f"User {target['name']} is no longer a member of group {args['permission']}.",
-                    )
+                    return f"User {target['name']} is no longer a member of group {args['permission']}."
 
     async def runVyxalCommand(self, event: MessageEvent, args: dict[str, Any]):
         async with self.session.get(
@@ -248,57 +230,57 @@ class VyxalBot2(Application):
                 except ContentTypeError:
                     await self.room.edit(
                         messageID,
-                        f":{event.message_id} An error occured: " + await result.text(),
+                        f":{event.message_id} An error occured: "
+                        + await result.text(),
                     )
                 else:
                     if responseJson["stdout"]:
                         message += "stdout:\n" + responseJson["stdout"].strip()
                     if responseJson["stderr"]:
-                        message += "\nstderr:\n" + responseJson["stderr"].strip()
+                        message += (
+                            "\nstderr:\n" + responseJson["stderr"].strip()
+                        )
                     await self.room.edit(
                         messageID, f":{event.message_id} " + message.strip()
                     )
 
     async def runCommand(
-        self, room: Room, event: MessageEvent, command: str, args: dict[str, Any]
-    ):
+        self,
+        room: Room,
+        event: MessageEvent,
+        command: str,
+        args: dict[str, Any],
+    ) -> Optional[str]:
         if event.user_id == room.userID:
-            return
+            return None
         for groupName, group in self.config["groups"].items():
             if command in group.get("canRun", []) and not (
                 groupName in r["groups"]
                 if (r := self.userDB.getUserInfo(event.user_id))
                 else False
             ):
-                await self.room.reply(
-                    event.message_id,
-                    f'You do not have permission to run that command (must be a member of group "{groupName}"). If you think you should be able to, ping Ginger.',
-                )
-                return
+                return f'You do not have permission to run that command (must be a member of group "{groupName}"). If you think you should be able to, ping Ginger.'
         match command:
             case "die":
                 signal.raise_signal(signal.SIGINT)
+                return None
             case "help":
                 if commandName := args.get("command", ""):
                     if commandName == "me":
-                        await self.room.reply(
-                            event.message_id, "I'd love to, but I don't have any limbs."
-                        )
+                        return "I'd love to, but I don't have any limbs."
                     else:
-                        await self.room.reply(
-                            event.message_id,
-                            self.messages["commandhelp"].get(
-                                commandName, "No help is available for that command."
-                            ),
+                        return self.messages["commandhelp"].get(
+                            commandName,
+                            "No help is available for that command.",
                         )
                 else:
-                    await self.room.reply(
-                        event.message_id,
+                    return (
                         self.messages["help"].format(version=__version__)
-                        + f"{', '.join(sorted(map(lambda i: i if not i.startswith('!') else COMMAND_ALIASES[i], set(COMMAND_REGEXES.values()))))}",
+                        + f"{', '.join(sorted(map(lambda i: i if not i.startswith('!') else COMMAND_ALIASES[i], set(COMMAND_REGEXES.values()))))}"
                     )
+
             case "info":
-                await self.room.reply(event.message_id, self.messages["info"])
+                return self.messages["info"]
             case "status":
                 if args.get("mood", ""):
                     msg = f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}"
@@ -317,7 +299,9 @@ class VyxalBot2(Application):
                             msg = (
                                 "\n".join(
                                     msg.splitlines()[
-                                        : random.randint(1, len(msg.splitlines()))
+                                        : random.randint(
+                                            1, len(msg.splitlines())
+                                        )
                                     ]
                                 )
                                 + " *yawn*\n"
@@ -332,13 +316,19 @@ class VyxalBot2(Application):
                                     msg.splitlines(),
                                 )
                             )
-                    await self.room.reply(event.message_id, msg)
+                    return msg
                 else:
-                    await self.room.reply(
-                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") and i.endswith(tuple(ascii_letters)) else i)
+                    return (
+                        i + "."
+                        if not (i := random.choice(self.statuses)).endswith(".")
+                        and i.endswith(tuple(ascii_letters))
+                        else i
                     )
+
             case "permissions":
-                await self.permissionsCommand(event, args)
+                return self.permissionsCommand(
+                    event, args
+                )  # TODO: Make this also not just send
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
                     self.userDB.removeUserFromDatabase(event.user_id)
@@ -349,73 +339,58 @@ class VyxalBot2(Application):
                         )
                     ).json()
                 )
-                await self.room.reply(
-                    event.message_id,
-                    "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
-                )
+                return "You have been registered! You don't have any permissions yet; ping an admin if you think you should."
             case "groups":
                 match args["action"]:
                     case "list":
-                        await self.room.reply(
-                            event.message_id,
-                            f"All groups: {', '.join(self.config['groups'].keys())}",
-                        )
+                        return f"All groups: {', '.join(self.config['groups'].keys())}"
                     case "members":
                         args["group"] = args["group"].removesuffix("s")
-                        await self.room.reply(
-                            event.message_id,
-                            f"Members of group {args['group']}: {', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(args['group'])))}",
-                        )
+                        return f"Members of group {args['group']}: {', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(args['group'])))}"
+
             case "ping":
                 args["group"] = args["group"].removesuffix("s")
                 if not len(
                     message := " ".join(
                         [
                             "@" + user["name"]
-                            for user in self.userDB.membersOfGroup(args["group"])
+                            for user in self.userDB.membersOfGroup(
+                                args["group"]
+                            )
                         ]
                     )
                     + " ^"
                 ):
-                    await self.room.send("Nobody to ping.")
+                    return "Nobody to ping."
                 else:
-                    await self.room.send(message)
+                    return message
             case "coffee":
-                await self.room.send(
-                    f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
-                )
+                return f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
             case "maul":
                 if args["user"].lower() == "vyxalbot":
-                    await self.room.send("No.")
+                    return "As if I'm going to let you do that, idiot."  # TODO: Maul the user who tried mauling the bot
                 else:
-                    await self.room.send(RAPTOR.format(user=args["user"].upper()))
+                    return RAPTOR.format(user=args["user"].upper())
             case "cookie":
                 if info := self.userDB.getUserInfo(event.user_id):
                     if "admin" in info["groups"]:
-                        await self.room.reply(event.message_id, "Here you go: 🍪")
-                        return
+                        return event.message_id, "Here you go: 🍪"
                 if random.random() <= 0.75:
-                    await self.room.reply(event.message_id, "Here you go: 🍪")
+                    return "Here you go: 🍪"
                 else:
-                    await self.room.reply(event.message_id, "No.")
+                    return "No."
             case "hug":
-                await self.room.reply(
-                    event.message_id, random.choice(self.messages["hugs"])
-                )
+                return random.choice(self.messages["hugs"])
             case "!repo-list":
-                await self.room.reply(
-                    event.message_id,
-                    "Repositories: "
-                    + " | ".join(
-                        [
-                            formatRepo(item, False)
-                            async for item in self.gh.getiter(
-                                f"/users/{self.config['account']}/repos",
-                                {"sort": "created"},
-                                oauth_token=(await self.appToken(self.gh)).token,
-                            )
-                        ][:5]
-                    ),
+                return "Repositories: " + " | ".join(
+                    [
+                        formatRepo(item, False)
+                        async for item in self.gh.getiter(
+                            f"/users/{self.config['account']}/repos",
+                            {"sort": "created"},
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                    ][:5]
                 )
             case "!issue-open":
                 try:
@@ -423,17 +398,11 @@ class VyxalBot2(Application):
                     # ICKY SPECIAL CASING
                     if repo == "Vyxal":
                         if not isinstance(args["labels"], str):
-                            return await self.room.reply(
-                                event.message_id,
-                                'You must specify one of "version-2" or "version-3" as a label!',
-                            )
+                            return 'You must specify one of "version-2" or "version-3" as a label!'
                         if "version-3" not in args["labels"].split(
                             ";"
                         ) and "version-2" not in args["labels"].split(";"):
-                            return await self.room.reply(
-                                event.message_id,
-                                'You must specify one of "version-2" or "version-3" as a label!',
-                            )
+                            return 'You must specify one of "version-2" or "version-3" as a label!'
                     await self.gh.post(
                         f"/repos/{self.config['account']}/{repo}/issues",
                         data={
@@ -441,37 +410,35 @@ class VyxalBot2(Application):
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
                             "labels": (
-                                args["labels"].split(";") if args["labels"] else []
+                                args["labels"].split(";")
+                                if args["labels"]
+                                else []
                             ),
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
+                    return None
                 except GitHubHTTPException as e:
-                    await self.room.reply(
-                        event.message_id,
-                        f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
-                    )
+                    return f"Failed to create issue: {e.status_code.value} {e.status_code.description}"
             case "sus":
                 if (
                     "__msg__" in args
                     and random.random() >= 0.25
                     and event.user_id != self.room.userID
                 ):
-                    return
-                await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
+                    return None
+                return "ඞ" * random.randint(8, 64)
             case "amilyxal":
-                await self.room.reply(
-                    event.message_id,
-                    f"You are {'' if (event.user_id == 354515) != (random.random() <= 0.1) else 'not '}lyxal.",
-                )
+                return f"You are {'' if (event.user_id == 354515) != (random.random() <= 0.1) else 'not '}lyxal."
             case "prod":
                 if (
-                    repo := (args["repo"] if args["repo"] else self.config["baseRepo"])
-                ) not in self.config["production"].keys():
-                    return await self.room.reply(
-                        event.message_id,
-                        f"That repository isn't listed in config.json.",
+                    repo := (
+                        args["repo"]
+                        if args["repo"]
+                        else self.config["baseRepo"]
                     )
+                ) not in self.config["production"].keys():
+                    return f"That repository isn't listed in config.json."
                 try:
                     await self.gh.post(
                         f"/repos/{self.config['account']}/{repo}/pulls",
@@ -483,76 +450,88 @@ class VyxalBot2(Application):
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
+                    return None
                 except ValidationError as e:
-                    await self.room.reply(
-                        event.message_id,
-                        f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}",
-                    )
+                    return f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}"
+
                 except GitHubHTTPException as e:
-                    await self.room.reply(
-                        event.message_id,
-                        f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
-                    )
+                    return f"Failed to create issue: {e.status_code.value} {e.status_code.description}"
             case "run":
-                await self.room.reply(event.message_id, "This command is disabled.")
-                return
+                return "This command is disabled."
+                # return
                 task = create_task(self.runVyxalCommand(event, args))
                 task.add_done_callback(self.runningTasks.discard)
                 self.runningTasks.add(task)
             case "blame":
-                await self.room.reply(
-                    event.message_id,
-                    f"It was {random.choice(self.userDB.users())['name']}'s fault!",
-                )
+                return f"It was {random.choice(self.userDB.users())['name']}'s fault!"
             case "!good-bot":
                 await self.room.send(":3")
+                return None
             case "hello":
-                await self.room.reply(
-                    event.message_id, random.choice(self.messages["hello"])
-                )
+                return random.choice(self.messages["hello"])
             case "goodbye":
-                await self.room.reply(
-                    event.message_id, random.choice(self.messages["goodbye"])
-                )
+                return random.choice(self.messages["goodbye"])
 
     async def onEditMessage(self, room: Room, event: UnknownEvent):
+        myMessage: int = self.replyDB.getCorrespondingId(
+            event.args["message_id"]
+        )
         try:
-            myMessage: int = self.replyDB.getCorrespondingId(event.args["message_id")
-            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.args["content"]):
+            if match := re.fullmatch(
+                r"!!\/(?P<command>.+)", event.args["content"]
+            ):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        return await self.runCommand( # TODO: Make this not send new messages.
-                            room, event, command, match.groupdict()
+                        return await self.room.edit(
+                            myMessage,
+                            f":{myMessage}"
+                            + self.runCommand(
+                                room, event, command, match.groupdict()
+                            ),
                         )
+        except Exception as e:
+            msg = f"@Ginger An error occurred while handling message {event.message_id}!"
+            await self.room.edit(myMessage, msg)
+            self.logger.exception(msg)
+            self.errorsSinceStartup += 1
+
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
             if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        return await self.runCommand(
-                            room, event, command, match.groupdict()
+                        return await self.room.send(
+                            self.runCommand(
+                                room, event, command, match.groupdict()
+                            )
                         )
                 return await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
                 if match := re.fullmatch(regex, event.content):
-                    await self.runCommand(
-                        room, event, command, match.groupdict() | {"__msg__": True}
+                    await self.room.send(
+                        self.runCommand(
+                            room,
+                            event,
+                            command,
+                            match.groupdict() | {"__msg__": True},
+                        )
                     )
         except Exception:
-            msg = (
-                f"@Ginger An error occurred while handling message {event.message_id}!"
-            )
+            msg = f"@Ginger An error occurred while handling message {event.message_id}!"
             await self.room.send(msg)
             self.logger.exception(msg)
             self.errorsSinceStartup += 1
 
     async def autoTag(self, event: GitHubEvent, gh: GitHubAPI):
         pullRequest = event.data["pull_request"]
-        if event.data["repository"]["name"] not in self.config["importantRepositories"]:
+        if (
+            event.data["repository"]["name"]
+            not in self.config["importantRepositories"]
+        ):
             return
         if len(pullRequest["labels"]):
             return
@@ -683,7 +662,10 @@ class VyxalBot2(Application):
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {release["name"].lower()}]({release["html_url"]})__'
         )
-        if event.data["repository"]["name"] in self.config["importantRepositories"]:
+        if (
+            event.data["repository"]["name"]
+            in self.config["importantRepositories"]
+        ):
             await self.room.pin(message)
 
     async def onFork(self, event: GitHubEvent, gh: GitHubAPI):
@@ -746,7 +728,10 @@ def run():
 
     async def makeApp():
         return VyxalBot2(
-            config, cast(Any, messages), str(STORAGE_PATH / "storage.json"), statuses
+            config,
+            cast(Any, messages),
+            str(STORAGE_PATH / "storage.json"),
+            statuses,
         )
 
     run_app(makeApp(), port=config["port"])
