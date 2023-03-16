@@ -107,6 +107,7 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
+        self.room.register(self.onEditMessage, EventType.EDIT)
         await self.room.send("Well, here we are again.")
         self.startupTime = datetime.now()
 
@@ -511,7 +512,9 @@ class VyxalBot2(Application):
                             room, event, command, match.groupdict()
                         )
                         if response is not None:
-                            return await self.room.send(response)
+                            temp = await self.room.send(response)
+                            self.replyDB.addReplyToDatabase([event.message_id, temp])
+                            return temp
                 return await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
