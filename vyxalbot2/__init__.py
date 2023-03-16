@@ -483,13 +483,18 @@ class VyxalBot2(Application):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        return await self.room.edit(
-                            myMessage,
-                            f":{myMessage}"
-                            + self.runCommand(
-                                room, event, command, match.groupdict()
-                            ),
+                        response = self.runCommand(
+                            room, event, command, match.groupdict()
                         )
+                        if response is not None:
+                            return await self.room.edit(
+                                myMessage,
+                                f":{myMessage}" + response,
+                            )
+                return await self.room.edit(
+                    myMessage,
+                    f"Sorry {event.user_name}, I'm afraid I can't do that.",
+                )
         except Exception as e:
             msg = f"@Ginger An error occurred while handling message {event.message_id}!"
             await self.room.edit(myMessage, msg)
@@ -502,24 +507,24 @@ class VyxalBot2(Application):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        return await self.room.send(
-                            self.runCommand(
-                                room, event, command, match.groupdict()
-                            )
+                        response = self.runCommand(
+                            room, event, command, match.groupdict()
                         )
+                        if response is not None:
+                            return await self.room.send(response)
                 return await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
                 if match := re.fullmatch(regex, event.content):
-                    await self.room.send(
-                        self.runCommand(
-                            room,
-                            event,
-                            command,
-                            match.groupdict() | {"__msg__": True},
-                        )
+                    response = self.runCommand(
+                        room,
+                        event,
+                        command,
+                        match.groupdict() | {"__msg__": True},
                     )
+                    if response is not None:
+                        await self.room.send(response)
         except Exception:
             msg = f"@Ginger An error occurred while handling message {event.message_id}!"
             await self.room.send(msg)
