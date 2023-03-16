@@ -63,6 +63,7 @@ class VyxalBot2(Application):
         self.messages = messages
         self.statuses = statuses
         self.userDB = UserDB(storagePath, self.config["groups"])
+        self.replyDB = ReplyDB(storagePath)
         self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
@@ -514,6 +515,16 @@ class VyxalBot2(Application):
                     event.message_id, random.choice(self.messages["goodbye"])
                 )
 
+    async def onEditMessage(self, room: Room, event: UnknownEvent):
+        try:
+            myMessage: int = self.replyDB.getCorrespondingId(event.args["message_id")
+            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.args["content"]):
+                rawCommand = match["command"]
+                for regex, command in COMMAND_REGEXES.items():
+                    if match := re.fullmatch(regex, rawCommand):
+                        return await self.runCommand( # TODO: Make this not send new messages.
+                            room, event, command, match.groupdict()
+                        )
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
             if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
