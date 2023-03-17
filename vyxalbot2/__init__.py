@@ -173,7 +173,7 @@ class VyxalBot2(Application):
 
     async def permissionsCommand(
         self, event: MessageEvent, args: dict[str, Any]
-    ) -> Optional[str]:
+    ) -> str:
         target = self.userDB.getUserInfo(
             int(args["user"]) if args["user"] != "me" else event.user_id
         )
@@ -205,6 +205,7 @@ class VyxalBot2(Application):
                 else:
                     self.userDB.removeUserFromGroup(target, args["permission"])
                     return f"User {target['name']} is no longer a member of group {args['permission']}."
+        return ""
 
     async def runVyxalCommand(self, event: MessageEvent, args: dict[str, Any]):
         async with self.session.get(
@@ -251,7 +252,7 @@ class VyxalBot2(Application):
         event: MessageEvent,
         command: str,
         args: dict[str, Any],
-    ) -> Optional[str]:
+    ) -> Optional[str | int]:
         if event.user_id == room.userID:
             return None
         for groupName, group in self.config["groups"].items():
@@ -327,9 +328,7 @@ class VyxalBot2(Application):
                     )
 
             case "permissions":
-                return self.permissionsCommand(
-                    event, args
-                )  # TODO: Make this also not just send
+                return self.permissionsCommand(event, args)
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
                     self.userDB.removeUserFromDatabase(event.user_id)
@@ -375,7 +374,7 @@ class VyxalBot2(Application):
             case "cookie":
                 if info := self.userDB.getUserInfo(event.user_id):
                     if "admin" in info["groups"]:
-                        return event.message_id, "Here you go: 🍪"
+                        return "Here you go: 🍪"
                 if random.random() <= 0.75:
                     return "Here you go: 🍪"
                 else:
@@ -466,8 +465,7 @@ class VyxalBot2(Application):
             case "blame":
                 return f"It was {random.choice(self.userDB.users())['name']}'s fault!"
             case "!good-bot":
-                await self.room.send(":3")
-                return None
+                return await self.room.send(":3")
             case "hello":
                 return random.choice(self.messages["hello"])
             case "goodbye":
@@ -512,8 +510,12 @@ class VyxalBot2(Application):
                             room, event, command, match.groupdict()
                         )
                         if response is not None:
+                            if isinstance(response, int):
+                                return response
                             temp = await self.room.send(response)
-                            self.replyDB.addReplyToDatabase([event.message_id, temp])
+                            self.replyDB.addReplyToDatabase(
+                                [event.message_id, temp]
+                            )
                             return temp
                 return await self.room.send(
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
