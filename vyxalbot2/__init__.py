@@ -486,6 +486,8 @@ class VyxalBot2(Application):
                             room, event, command, match.groupdict()
                         )
                         if response is not None:
+                            if isinstance(response, int):
+                                return response
                             return await self.room.edit(
                                 myMessage,
                                 f":{myMessage}" + response,
