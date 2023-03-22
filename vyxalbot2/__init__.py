@@ -107,7 +107,7 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
-        self.room.register(self.onEditMessage, EventType.EDIT)
+        self.room.register(self.onEdit, EventType.EDIT)
         await self.room.send("Well, here we are again.")
         self.startupTime = datetime.now()
 
@@ -471,7 +471,7 @@ class VyxalBot2(Application):
             case "goodbye":
                 return random.choice(self.messages["goodbye"])
 
-    async def onEditMessage(self, room: Room, event: UnknownEvent):
+    async def onEdit(self, room: Room, event: UnknownEvent):
         myMessage: int = self.replyDB.getCorrespondingId(
             event.args["message_id"]
         )
