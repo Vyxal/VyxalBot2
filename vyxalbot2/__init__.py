@@ -3,6 +3,7 @@ from time import time
 from datetime import datetime
 from pathlib import Path
 from asyncio import create_task
+from html import unescape
 from string import ascii_letters
 
 import logging
@@ -13,8 +14,10 @@ import signal
 import random
 import re
 import codecs
+import base64
 
 import tomli
+import yaml
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
@@ -492,6 +495,46 @@ class VyxalBot2(Application):
                         event.message_id,
                         f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
                     )
+            case "idiom":
+                match args["action"]:
+                    case "add":
+                        file = await self.gh.getitem(
+                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                        idioms = yaml.safe_load(base64.b64decode(file["content"]))
+                        if not idioms:
+                            idioms = []
+                        idioms.append(
+                            {
+                                "name": args["title"],
+                                "code": args["code"],
+                                "description": args["description"],
+                                "link": "#"
+                                + base64.b64encode(
+                                    json.dumps(["", "", "", args["code"], ""]).encode(
+                                        "utf-8"
+                                    )
+                                ).decode("utf-8"),
+                                "keywords": args["keywords"].split(),
+                            }
+                        )
+                        await self.gh.put(
+                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            data={
+                                "message": f"Added \"{args['title']}\" to the idiom list.\nRequested by {event.user_name} here: {f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'}",
+                                "content": base64.b64encode(
+                                    yaml.dump(
+                                        idioms, encoding="utf-8", allow_unicode=True
+                                    )
+                                ).decode("utf-8"),
+                                "sha": file["sha"],
+                            },
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                        await self.room.reply(
+                            event.message_id, f"Idiom added successfully."
+                        )
             case "run":
                 await self.room.reply(event.message_id, "This command is disabled.")
                 return
@@ -516,7 +559,7 @@ class VyxalBot2(Application):
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
-            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
+            if match := re.fullmatch(r"!!\/(?P<command>.+)", unescape(event.content)):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
@@ -527,7 +570,7 @@ class VyxalBot2(Application):
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
-                if match := re.fullmatch(regex, event.content):
+                if match := re.fullmatch(regex, unescape(event.content)):
                     await self.runCommand(
                         room, event, command, match.groupdict() | {"__msg__": True}
                     )

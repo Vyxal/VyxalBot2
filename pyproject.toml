@@ -17,6 +17,7 @@ pyjwt = "^2.6.0"
 python-dateutil = "^2.8.2"
 websockets = "^10.4"
 uwuipy = "^0.1.4"
+pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 black = {version = "^23.1.0", allow-prereleases = true}
