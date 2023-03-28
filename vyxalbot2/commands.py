@@ -8,7 +8,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
         r"((lol )?(yo)?u good( (there )?(my )?(epic )?(bro|dude|sis|buddy|mate|m8|gamer)?)?\??)",
     ): "status",
     (r"info",): "info",
-    (r"help( (?P<command>.+))?",): "help",
+    (r"help( (?P<command>.+))?", r"how (do(es)?)? (the)? bot work\?*"): "help",
     (
         r"coffee (?P<user>.+)",
         r"(make|brew)( a cup of)? coffee for (?P<user>.+)",
