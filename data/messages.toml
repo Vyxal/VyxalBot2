@@ -54,3 +54,4 @@ prod = "`!!/prod(uction)? [repo name]`: Open a pull request from main to product
 blame = "`!!/blame`: Whose fault is it?"
 hello = "`!!/hello`: Hello!"
 goodbye = "`!!/goodbye`: Goodbye!"
+idiom = "``!!/idiom add __name__ `code` \"Description\" tag tag tag...``: Add an idiom to the idiom list."
