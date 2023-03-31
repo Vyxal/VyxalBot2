@@ -98,6 +98,7 @@ class VyxalBot2(Application):
         self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
 
     async def onStartup(self, _):
+        signal.raise_signal(signal.SIGINT)
         await self.bot.authenticate(
             self.config["SEEmail"], self.config["SEPassword"], self.config["SEHost"]
         )
