@@ -541,14 +541,14 @@ class VyxalBot2(Application):
                                 return response
                             return await self.room.edit(
                                 myMessage,
-                                f":{myMessage}" + response,
+                                f":{document['parentId']} " + response,
                             )
                 return await self.room.edit(
                     myMessage,
                     f"Sorry {event.user_name}, I'm afraid I can't do that.",
                 )
         except Exception as e:
-            msg = f"@Ginger An error occurred while handling message {event.message_id}!"
+            msg = f"@Ginger An error occurred while editing message {event.message_id}!"
             await self.room.edit(myMessage, msg)
             self.logger.exception(msg)
             self.errorsSinceStartup += 1
