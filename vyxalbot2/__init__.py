@@ -469,7 +469,9 @@ class VyxalBot2(Application):
                             f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
                             oauth_token=(await self.appToken(self.gh)).token,
                         )
-                        idioms = yaml.safe_load(base64.b64decode(file["content"]))
+                        idioms = yaml.safe_load(
+                            base64.b64decode(file["content"])
+                        )
                         if not idioms:
                             idioms = []
                         idioms.append(
@@ -479,9 +481,9 @@ class VyxalBot2(Application):
                                 "description": args["description"],
                                 "link": "#"
                                 + base64.b64encode(
-                                    json.dumps(["", "", "", args["code"], ""]).encode(
-                                        "utf-8"
-                                    )
+                                    json.dumps(
+                                        ["", "", "", args["code"], ""]
+                                    ).encode("utf-8")
                                 ).decode("utf-8"),
                                 "keywords": args["keywords"].split(),
                             }
@@ -492,16 +494,16 @@ class VyxalBot2(Application):
                                 "message": f"Added \"{args['title']}\" to the idiom list.\nRequested by {event.user_name} here: {f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'}",
                                 "content": base64.b64encode(
                                     yaml.dump(
-                                        idioms, encoding="utf-8", allow_unicode=True
+                                        idioms,
+                                        encoding="utf-8",
+                                        allow_unicode=True,
                                     )
                                 ).decode("utf-8"),
                                 "sha": file["sha"],
                             },
                             oauth_token=(await self.appToken(self.gh)).token,
                         )
-                        await self.room.reply(
-                            event.message_id, f"Idiom added successfully."
-                        )
+                        return "Idiom added successfully."
             case "run":
                 return "This command is disabled."
                 # return
@@ -550,7 +552,9 @@ class VyxalBot2(Application):
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
-            if match := re.fullmatch(r"!!\/(?P<command>.+)", unescape(event.content)):
+            if match := re.fullmatch(
+                r"!!\/(?P<command>.+)", unescape(event.content)
+            ):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
@@ -571,7 +575,10 @@ class VyxalBot2(Application):
             for regex, command in MESSAGE_REGEXES.items():
                 if match := re.fullmatch(regex, unescape(event.content)):
                     await self.runCommand(
-                        room, event, command, match.groupdict() | {"__msg__": True}
+                        room,
+                        event,
+                        command,
+                        match.groupdict() | {"__msg__": True},
                     )
                     if response is not None:
                         await self.room.send(response)
