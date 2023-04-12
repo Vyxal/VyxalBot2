@@ -22,7 +22,7 @@ import yaml
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
 from aiohttp.client_exceptions import ContentTypeError
-from sechat import Bot, Room, MessageEvent, EventType, UnknownEvent
+from sechat import Bot, Room, MessageEvent, EditEvent, EventType
 from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.abc import GitHubAPI
@@ -35,6 +35,7 @@ from dateutil.parser import parse as parseDatetime
 from uwuipy import uwuipy
 
 from vyxalbot2.userdb import UserDB
+from vyxalbot2.replydb import ReplyDB
 from vyxalbot2.util import (
     formatUser,
     formatRepo,
@@ -331,7 +332,7 @@ class VyxalBot2(Application):
                     )
 
             case "permissions":
-                return self.permissionsCommand(event, args)
+                return await self.permissionsCommand(event, args)
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
                     self.userDB.removeUserFromDatabase(event.user_id)
@@ -519,18 +520,20 @@ class VyxalBot2(Application):
             case "goodbye":
                 return random.choice(self.messages["goodbye"])
 
-    async def onEdit(self, room: Room, event: UnknownEvent):
-        myMessage: int = self.replyDB.getCorrespondingId(
-            event.args["message_id"]
-        )
+    async def onEdit(self, room: Room, event: EditEvent):
+        if (document := self.replyDB.getCorrespondingId(
+            event.message_id
+        )) == None:
+            return
+        myMessage: int = document["botMessageId"]
         try:
             if match := re.fullmatch(
-                r"!!\/(?P<command>.+)", event.args["content"]
+                r"!!\/(?P<command>.+)", event.content
             ):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        response = self.runCommand(
+                        response = await self.runCommand(
                             room, event, command, match.groupdict()
                         )
                         if response is not None:
@@ -558,7 +561,7 @@ class VyxalBot2(Application):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
-                        response = self.runCommand(
+                        response = await self.runCommand(
                             room, event, command, match.groupdict()
                         )
                         if response is not None:
@@ -574,14 +577,14 @@ class VyxalBot2(Application):
                 )
             for regex, command in MESSAGE_REGEXES.items():
                 if match := re.fullmatch(regex, unescape(event.content)):
-                    await self.runCommand(
+                    response = await self.runCommand(
                         room,
                         event,
                         command,
                         match.groupdict() | {"__msg__": True},
                     )
                     if response is not None:
-                        await self.room.send(response)
+                        await self.room.send(str(response))
         except Exception:
             msg = f"@Ginger An error occurred while handling message {event.message_id}!"
             await self.room.send(msg)
