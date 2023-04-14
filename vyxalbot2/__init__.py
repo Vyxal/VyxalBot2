@@ -15,6 +15,7 @@ import random
 import re
 import codecs
 import base64
+import subprocess
 
 import tomli
 import yaml
@@ -557,6 +558,13 @@ class VyxalBot2(Application):
                 await self.room.reply(
                     event.message_id, random.choice(self.messages["goodbye"])
                 )
+            case "pull":
+                if subprocess.run(["git", "pull"]).returncode == 0:
+                    await self.room.reply(event.message_id, "Restarting...")
+                    signal.raise_signal(signal.SIGINT)
+                else:
+                    await self.room.reply(event.message_id, "Failed to pull!")
+                
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
