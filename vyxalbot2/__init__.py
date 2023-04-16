@@ -2,7 +2,7 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
-from asyncio import create_task
+from asyncio import create_task, CancelledError, wait_for, sleep
 from html import unescape
 from string import ascii_letters
 
@@ -103,17 +103,27 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
+        self.roomStateMonitor = create_task(self.monitorRoomStates())
         await self.room.send("Well, here we are again.")
         self.startupTime = datetime.now()
 
+    async def monitorRoomStates(self):
+        try:
+            while True:
+                await self.bot.checkTasks()
+                await sleep(1)
+        except CancelledError:
+            pass
+
     async def onShutdown(self, _):
-        signal.raise_signal(signal.SIGINT)
+        self.roomStateMonitor.cancel()
+        await wait_for(self.roomStateMonitor, 3)
         try:
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
             pass
-        await self.bot.__aexit__(None, None, None)  # DO NOT TRY THIS AT HOME
-        await self.session.close()
+        await wait_for(self.bot.__aexit__(None, None, None), 6)  # DO NOT TRY THIS AT HOME
+        await wait_for(self.session.close(), 3)
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
         if self._appToken != None:
