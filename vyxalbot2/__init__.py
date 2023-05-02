@@ -389,11 +389,10 @@ class VyxalBot2(Application):
                             for user in self.userDB.membersOfGroup(args["group"])
                         ]
                     )
-                    + " ^"
                 ):
                     await self.room.send("Nobody to ping.")
                 else:
-                    await self.room.send(message)
+                    await self.room.send(message + " ^")
             case "coffee":
                 await self.room.send(
                     f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
