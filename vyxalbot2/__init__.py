@@ -2,7 +2,9 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
-from asyncio import create_task
+from asyncio import create_task, CancelledError, wait_for, sleep
+from html import unescape
+from string import ascii_letters
 
 import logging
 import sys
@@ -11,8 +13,12 @@ import os
 import signal
 import random
 import re
+import codecs
+import base64
+import subprocess
 
 import tomli
+import yaml
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
@@ -27,6 +33,7 @@ from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 from platformdirs import user_state_path
 from dateutil.parser import parse as parseDatetime
+from uwuipy import uwuipy
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
@@ -38,7 +45,7 @@ from vyxalbot2.util import (
     TAG_MAP,
 )
 from vyxalbot2.types import ConfigType, MessagesType, AppToken
-from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES
+from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
 
@@ -97,16 +104,27 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
+        self.roomStateMonitor = create_task(self.monitorRoomStates())
         await self.room.send("Well, here we are again.")
         self.startupTime = datetime.now()
 
+    async def monitorRoomStates(self):
+        try:
+            while True:
+                await self.bot.checkTasks()
+                await sleep(1)
+        except CancelledError:
+            pass
+
     async def onShutdown(self, _):
+        self.roomStateMonitor.cancel()
+        await wait_for(self.roomStateMonitor, 3)
         try:
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
             pass
-        await self.bot.__aexit__(None, None, None)  # DO NOT TRY THIS AT HOME
-        await self.session.close()
+        await wait_for(self.bot.__aexit__(None, None, None), 6)  # DO NOT TRY THIS AT HOME
+        await wait_for(self.session.close(), 3)
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
         if self._appToken != None:
@@ -291,19 +309,47 @@ class VyxalBot2(Application):
                     await self.room.reply(
                         event.message_id,
                         self.messages["help"].format(version=__version__)
-                        + f"{', '.join(sorted(set(COMMAND_REGEXES.values())))}",
+                        + f"{', '.join(sorted(map(lambda i: i if not i.startswith('!') else COMMAND_ALIASES[i], set(COMMAND_REGEXES.values()))))}",
                     )
             case "info":
                 await self.room.reply(event.message_id, self.messages["info"])
             case "status":
-                if args.get("boring", ""):
-                    await self.room.reply(
-                        event.message_id,
-                        f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}",
-                    )
+                if args.get("mood", ""):
+                    msg = f"Bot status: Online\nUptime: {datetime.now() - self.startupTime}\nRunning since: {self.startupTime.isoformat()}\nErrors since startup: {self.errorsSinceStartup}"
+                    match args.get("mood", ""):
+                        case "boring":
+                            pass
+                        case "exciting":
+                            msg = "\n".join(
+                                line + ("!" * random.randint(2, 5))
+                                for line in msg.upper().splitlines()
+                            )
+                        case "tingly":
+                            uwu = uwuipy(None, 0.3, 0.2, 0.2, 1)  # type: ignore Me when the developers of uwuipy don't annotate their types correctly
+                            msg = uwu.uwuify(msg)
+                        case "sleepy":
+                            msg = (
+                                "\n".join(
+                                    msg.splitlines()[
+                                        : random.randint(1, len(msg.splitlines()))
+                                    ]
+                                )
+                                + " *yawn*\n"
+                                + "z" * random.randint(5, 10)
+                            )
+                        case "cryptic":
+                            msg = codecs.encode(msg, "rot13")
+                        case "goofy":
+                            msg = "\n".join(
+                                map(
+                                    lambda i: i + "🤓" * random.randint(1, 3),
+                                    msg.splitlines(),
+                                )
+                            )
+                    await self.room.reply(event.message_id, msg)
                 else:
                     await self.room.reply(
-                        event.message_id, random.choice(self.statuses)
+                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") and i.endswith(tuple(ascii_letters)) else i)
                     )
             case "permissions":
                 await self.permissionsCommand(event, args)
@@ -343,11 +389,10 @@ class VyxalBot2(Application):
                             for user in self.userDB.membersOfGroup(args["group"])
                         ]
                     )
-                    + " ^"
                 ):
                     await self.room.send("Nobody to ping.")
                 else:
-                    await self.room.send(message)
+                    await self.room.send(message + " ^")
             case "coffee":
                 await self.room.send(
                     f"@{event.user_name if args['user'] == 'me' else args['user']} Here's your coffee: ☕"
@@ -370,7 +415,7 @@ class VyxalBot2(Application):
                 await self.room.reply(
                     event.message_id, random.choice(self.messages["hugs"])
                 )
-            case "repo-list":
+            case "!repo-list":
                 await self.room.reply(
                     event.message_id,
                     "Repositories: "
@@ -385,14 +430,32 @@ class VyxalBot2(Application):
                         ][:5]
                     ),
                 )
-            case "issue-open":
+            case "!issue-open":
                 try:
+                    repo = args["repo"] or self.config["baseRepo"]
+                    # ICKY SPECIAL CASING
+                    if repo == "Vyxal":
+                        if not isinstance(args["labels"], str):
+                            return await self.room.reply(
+                                event.message_id,
+                                'You must specify one of "version-2" or "version-3" as a label!',
+                            )
+                        if "version-3" not in args["labels"].split(
+                            ";"
+                        ) and "version-2" not in args["labels"].split(";"):
+                            return await self.room.reply(
+                                event.message_id,
+                                'You must specify one of "version-2" or "version-3" as a label!',
+                            )
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{(args['repo'] if args['repo'] else self.config['baseRepo'])}/issues",
+                        f"/repos/{self.config['account']}/{repo}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
                             + f"\n\n_Issue created by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'})_",
+                            "labels": (
+                                args["labels"].split(";") if args["labels"] else []
+                            ),
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
                     )
@@ -408,11 +471,11 @@ class VyxalBot2(Application):
                     and event.user_id != self.room.userID
                 ):
                     return
-                await self.room.reply(event.message_id, "ඞ" * random.randint(1, 10))
+                await self.room.reply(event.message_id, "ඞ" * random.randint(8, 64))
             case "amilyxal":
                 await self.room.reply(
                     event.message_id,
-                    f"You are {'' if event.user_id == 354515 else 'not '}lyxal.",
+                    f"You are {'' if (event.user_id == 354515) != (random.random() <= 0.1) else 'not '}lyxal.",
                 )
             case "prod":
                 if (
@@ -443,7 +506,49 @@ class VyxalBot2(Application):
                         event.message_id,
                         f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
                     )
+            case "idiom":
+                match args["action"]:
+                    case "add":
+                        file = await self.gh.getitem(
+                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                        idioms = yaml.safe_load(base64.b64decode(file["content"]))
+                        if not idioms:
+                            idioms = []
+                        idioms.append(
+                            {
+                                "name": args["title"],
+                                "code": args["code"],
+                                "description": args["description"],
+                                "link": "#"
+                                + base64.b64encode(
+                                    json.dumps(["", "", "", args["code"], ""]).encode(
+                                        "utf-8"
+                                    )
+                                ).decode("utf-8"),
+                                "keywords": args["keywords"].split(),
+                            }
+                        )
+                        await self.gh.put(
+                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            data={
+                                "message": f"Added \"{args['title']}\" to the idiom list.\nRequested by {event.user_name} here: {f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'}",
+                                "content": base64.b64encode(
+                                    yaml.dump(
+                                        idioms, encoding="utf-8", allow_unicode=True
+                                    )
+                                ).decode("utf-8"),
+                                "sha": file["sha"],
+                            },
+                            oauth_token=(await self.appToken(self.gh)).token,
+                        )
+                        await self.room.reply(
+                            event.message_id, f"Idiom added successfully."
+                        )
             case "run":
+                await self.room.reply(event.message_id, "This command is disabled.")
+                return
                 task = create_task(self.runVyxalCommand(event, args))
                 task.add_done_callback(self.runningTasks.discard)
                 self.runningTasks.add(task)
@@ -452,16 +557,27 @@ class VyxalBot2(Application):
                     event.message_id,
                     f"It was {random.choice(self.userDB.users())['name']}'s fault!",
                 )
-            case "good-bot":
+            case "!good-bot":
                 await self.room.send(":3")
             case "hello":
-                await self.room.reply(event.message_id, random.choice(self.messages["hello"]))
+                await self.room.reply(
+                    event.message_id, random.choice(self.messages["hello"])
+                )
             case "goodbye":
-                await self.room.reply(event.message_id, random.choice(self.messages["goodbye"]))
+                await self.room.reply(
+                    event.message_id, random.choice(self.messages["goodbye"])
+                )
+            case "pull":
+                if subprocess.run(["git", "pull"]).returncode == 0:
+                    await self.room.reply(event.message_id, "Restarting...")
+                    signal.raise_signal(signal.SIGINT)
+                else:
+                    await self.room.reply(event.message_id, "Failed to pull!")
+                
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
-            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
+            if match := re.fullmatch(r"!!\/(?P<command>.+)", unescape(event.content)):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
@@ -472,7 +588,7 @@ class VyxalBot2(Application):
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
-                if match := re.fullmatch(regex, event.content):
+                if match := re.fullmatch(regex, unescape(event.content)):
                     await self.runCommand(
                         room, event, command, match.groupdict() | {"__msg__": True}
                     )
@@ -575,6 +691,7 @@ class VyxalBot2(Application):
                     f'{formatUser(event.data["sender"])} {"merged" if pullRequest["merged"] else "closed"} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
             case "review_requested":
+                return  # user doesn't want this apparently
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
                 )
