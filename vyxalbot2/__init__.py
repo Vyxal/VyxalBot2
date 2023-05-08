@@ -733,7 +733,7 @@ class VyxalBot2(Application):
         
         releaseName = release["name"].lower()
         # attempt to match version number, otherwise default to previous behaviour
-        if match := re.search("(\d+\.)*\d+", releaseName): 
+        if match := re.search("\d.*", releaseName): 
             releaseName = match[0]
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
