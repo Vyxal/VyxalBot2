@@ -730,8 +730,13 @@ class VyxalBot2(Application):
         self.logger.info(
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
+        
+        releaseName = release["name"].lower()
+        # attempt to match version number, otherwise default to previous behaviour
+        if match := re.search("\d.*", releaseName): 
+            releaseName = match[0]
         message = await self.room.send(
-            f'__[{event.data["repository"]["name"]} {release["name"].lower()}]({release["html_url"]})__'
+            f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         )
         if event.data["repository"]["name"] in self.config["importantRepositories"]:
             await self.room.pin(message)
