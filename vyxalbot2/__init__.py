@@ -499,7 +499,7 @@ class VyxalBot2(Application):
                 except ValidationError as e:
                     await self.room.reply(
                         event.message_id,
-                        f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}",
+                        f"Failed to create issue: Webhook validation failed: {str(e)}",
                     )
                 except GitHubHTTPException as e:
                     await self.room.reply(
