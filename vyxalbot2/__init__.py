@@ -105,7 +105,7 @@ class VyxalBot2(Application):
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.roomStateMonitor = create_task(self.monitorRoomStates())
-        await self.room.send("Well, here we are again.")
+        await self.room.send("Well, here we are again." if random.random() > 0.01 else "GOOD MORNING, MOTHERF***ERS")
         self.startupTime = datetime.now()
 
     async def monitorRoomStates(self):
