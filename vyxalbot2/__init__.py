@@ -799,6 +799,7 @@ class VyxalBot2(Application):
 def run():
     CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
     STORAGE_PATH = user_state_path("vyxalbot2", None, __version__)
+    USER_PATH = STORAGE_PATH / "storage.json"
     REPLY_PATH = STORAGE_PATH / "replies.json"
     os.makedirs(STORAGE_PATH, exist_ok=True)
     DATA_PATH = Path(__file__).resolve().parent.parent / "data"
@@ -822,7 +823,7 @@ def run():
         return VyxalBot2(
             config,
             cast(Any, messages),
-            str(STORAGE_PATH / "storage.json"),
+            str(USER_PATH),
             str(REPLY_PATH),
             statuses,
         )
