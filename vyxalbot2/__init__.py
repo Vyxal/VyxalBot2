@@ -657,6 +657,8 @@ class VyxalBot2(Application):
             return  # It's probably a tag push
         branch = event.data["ref"].split("/")[2]
         for commit in event.data["commits"]:
+            if not commit["distinct"]:
+                continue
             await self.room.send(
                 f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])}: {commit['message'].splitlines()[0]}"
             )
