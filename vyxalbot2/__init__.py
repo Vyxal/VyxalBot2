@@ -59,6 +59,7 @@ class VyxalBot2(Application):
         config: ConfigType,
         messages: MessagesType,
         storagePath: str,
+        replyPath: str,
         statuses: list[str],
     ) -> None:
         self.logger = logging.getLogger("VyxalBot2")
@@ -820,6 +821,7 @@ def run():
             config,
             cast(Any, messages),
             str(STORAGE_PATH / "storage.json"),
+            str(REPLY_PATH),
             statuses,
         )
 
