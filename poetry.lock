@@ -931,13 +931,14 @@ files = [
 
 [[package]]
 name = "uwuipy"
-version = "0.1.4"
+version = "0.1.6"
 description = "Allows the easy implementation of uwuifying words for applications like Discord bots and websites"
 category = "main"
 optional = false
-python-versions = "*"
+python-versions = ">=3.10,<4.0"
 files = [
-    {file = "uwuipy-0.1.4.tar.gz", hash = "sha256:080a7d08c714dba0aa7fce9f7e6b4cfbe308e7f092b98e93cea711ddccd7b18f"},
+    {file = "uwuipy-0.1.6-py3-none-any.whl", hash = "sha256:b84cee7cc67ae9ab93eeac1908ad62aa697cff982bdcd6aa734d692784a5575d"},
+    {file = "uwuipy-0.1.6.tar.gz", hash = "sha256:b62fa0d80b06b87ac1a432c2f8cc53538e8dc3f01fefb10264e98bf7802b8c4b"},
 ]
 
 [[package]]
@@ -1110,4 +1111,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5a9853b5b1e3584f2120033b6b10246ebc8b95aff778214ceda3ee6582532d7e"
+content-hash = "dcb2e7e827b3e6018b04debddd9a229a747f9e4162db493a3550a2c4ca279303"
