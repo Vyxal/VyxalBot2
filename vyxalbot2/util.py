@@ -39,6 +39,9 @@ def formatRepo(repo: dict, fullName: bool = True) -> str:
 def formatIssue(issue: dict) -> str:
     return f'[#{linkify(issue["number"])}]({issue["html_url"]}) ({issue["title"]})'
 
+def formatRef(ref: str, repo: dict) -> str:
+    return f'[{repo["name"]}/{ref}]({repo["html_url"]}/tree/{ref})'
+
 
 RAPTOR = r"""
                                                                    YOU CAN RUN, BUT YOU CAN'T HIDE, {user}
