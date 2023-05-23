@@ -41,6 +41,7 @@ from vyxalbot2.util import (
     formatUser,
     formatRepo,
     formatIssue,
+    formatRef,
     msgify,
     RAPTOR,
     TAG_MAP,
@@ -89,6 +90,7 @@ class VyxalBot2(Application):
         self.on_startup.append(self.onStartup)
         self.on_cleanup.append(self.onShutdown)
 
+        self.ghRouter.add(self.onPushAction, "push")
         self.ghRouter.add(self.onIssueAction, "issues")
         self.ghRouter.add(self.onPRAction, "pull_request")
 
@@ -650,6 +652,15 @@ class VyxalBot2(Application):
                 oauth_token=token,
             )
 
+    async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
+        if event.data["ref"].split("/")[1] != "heads":
+            return  # It's probably a tag push
+        branch = event.data["ref"].split("/")[2]
+        for commit in event.data["commits"]:
+            await self.room.send(
+                f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])}: {commit['message'].splitlines()[0]}"
+            )
+
     async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
         match event.data["action"]:
@@ -748,7 +759,7 @@ class VyxalBot2(Application):
 
         releaseName = release["name"].lower()
         # attempt to match version number, otherwise default to previous behaviour
-        if match := re.search("\d.*", releaseName):
+        if match := re.search(r"\d.*", releaseName):
             releaseName = match[0]
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
