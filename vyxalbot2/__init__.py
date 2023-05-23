@@ -107,7 +107,11 @@ class VyxalBot2(Application):
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.roomStateMonitor = create_task(self.monitorRoomStates())
-        await self.room.send("Well, here we are again." if random.random() > 0.01 else "GOOD MORNING, MOTHERF***ERS")
+        await self.room.send(
+            "Well, here we are again."
+            if random.random() > 0.01
+            else "GOOD MORNING, MOTHERF***ERS"
+        )
         self.startupTime = datetime.now()
 
     async def monitorRoomStates(self):
@@ -125,7 +129,9 @@ class VyxalBot2(Application):
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
             pass
-        await wait_for(self.bot.__aexit__(None, None, None), 6)  # DO NOT TRY THIS AT HOME
+        await wait_for(
+            self.bot.__aexit__(None, None, None), 6
+        )  # DO NOT TRY THIS AT HOME
         await wait_for(self.session.close(), 3)
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
@@ -351,7 +357,13 @@ class VyxalBot2(Application):
                     await self.room.reply(event.message_id, msg)
                 else:
                     await self.room.reply(
-                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") and i.endswith(tuple(ascii_letters)) else i)
+                        event.message_id,
+                        (
+                            i + "."
+                            if not (i := random.choice(self.statuses)).endswith(".")
+                            and i.endswith(tuple(ascii_letters))
+                            else i
+                        ),
                     )
             case "permissions":
                 await self.permissionsCommand(event, args)
@@ -575,7 +587,6 @@ class VyxalBot2(Application):
                     signal.raise_signal(signal.SIGINT)
                 else:
                     await self.room.reply(event.message_id, "Failed to pull!")
-                
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -639,10 +650,12 @@ class VyxalBot2(Application):
 
     async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
         if event.data["ref"].split("/")[1] != "heads":
-            return # It's probably a tag push
+            return  # It's probably a tag push
         branch = event.data["ref"].split("/")[2]
         for commit in event.data["commits"]:
-            await self.room.send(f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])}: {commit['message'].splitlines()[0]}")
+            await self.room.send(
+                f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])}: {commit['message'].splitlines()[0]}"
+            )
 
     async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
@@ -739,10 +752,10 @@ class VyxalBot2(Application):
         self.logger.info(
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
-        
+
         releaseName = release["name"].lower()
         # attempt to match version number, otherwise default to previous behaviour
-        if match := re.search(r"\d.*", releaseName): 
+        if match := re.search(r"\d.*", releaseName):
             releaseName = match[0]
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
