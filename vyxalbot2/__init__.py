@@ -106,7 +106,6 @@ class VyxalBot2(Application):
         )
         self.room = self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
-        self.roomStateMonitor = create_task(self.monitorRoomStates())
         await self.room.send(
             "Well, here we are again."
             if random.random() > 0.01
@@ -114,17 +113,8 @@ class VyxalBot2(Application):
         )
         self.startupTime = datetime.now()
 
-    async def monitorRoomStates(self):
-        try:
-            while True:
-                await self.bot.checkTasks()
-                await sleep(1)
-        except CancelledError:
-            pass
 
     async def onShutdown(self, _):
-        self.roomStateMonitor.cancel()
-        await wait_for(self.roomStateMonitor, 3)
         try:
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
