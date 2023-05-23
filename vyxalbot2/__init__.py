@@ -69,7 +69,7 @@ class VyxalBot2(Application):
         self.messages = messages
         self.statuses = statuses
         self.userDB = UserDB(storagePath, self.config["groups"])
-        self.replyDB = ReplyDB(storagePath)
+        self.replyDB = ReplyDB(replyPath)
         self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
