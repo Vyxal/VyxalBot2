@@ -114,7 +114,11 @@ class VyxalBot2(Application):
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.room.register(self.onEdit, EventType.EDIT)
         self.roomStateMonitor = create_task(self.monitorRoomStates())
-        await self.room.send("Well, here we are again." if random.random() > 0.01 else "GOOD MORNING, MOTHERF***ERS")
+        await self.room.send(
+            "Well, here we are again."
+            if random.random() > 0.01
+            else "GOOD MORNING, MOTHERF***ERS"
+        )
         self.startupTime = datetime.now()
 
     async def monitorRoomStates(self):
@@ -132,7 +136,9 @@ class VyxalBot2(Application):
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
             pass
-        await wait_for(self.bot.__aexit__(None, None, None), 6)  # DO NOT TRY THIS AT HOME
+        await wait_for(
+            self.bot.__aexit__(None, None, None), 6
+        )  # DO NOT TRY THIS AT HOME
         await wait_for(self.session.close(), 3)
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
@@ -470,10 +476,7 @@ class VyxalBot2(Application):
                     return f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}"
 
                 except GitHubHTTPException as e:
-                    await self.room.reply(
-                        event.message_id,
-                        f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
-                    )
+                    return f"Failed to create issue: {e.status_code.value} {e.status_code.description}"
             case "idiom":
                 match args["action"]:
                     case "add":
@@ -535,18 +538,16 @@ class VyxalBot2(Application):
                     await self.room.reply(event.message_id, "Restarting...")
                     signal.raise_signal(signal.SIGINT)
                 else:
-                    await self.room.reply(event.message_id, "Failed to pull!")
+                    return "Failed to pull!"
 
     async def onEdit(self, room: Room, event: EditEvent):
-        if (document := self.replyDB.getCorrespondingId(
-            event.message_id
-        )) == None:
+        if (
+            document := self.replyDB.getCorrespondingId(event.message_id)
+        ) == None:
             return
         myMessage: int = document["botMessageId"]
         try:
-            if match := re.fullmatch(
-                r"!!\/(?P<command>.+)", event.content
-            ):
+            if match := re.fullmatch(r"!!\/(?P<command>.+)", event.content):
                 rawCommand = match["command"]
                 for regex, command in COMMAND_REGEXES.items():
                     if match := re.fullmatch(regex, rawCommand):
@@ -741,10 +742,10 @@ class VyxalBot2(Application):
         self.logger.info(
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
-        
+
         releaseName = release["name"].lower()
         # attempt to match version number, otherwise default to previous behaviour
-        if match := re.search("\d.*", releaseName): 
+        if match := re.search("\d.*", releaseName):
             releaseName = match[0]
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
