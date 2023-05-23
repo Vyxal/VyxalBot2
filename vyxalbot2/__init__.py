@@ -114,7 +114,7 @@ class VyxalBot2(Application):
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.room.register(self.onEdit, EventType.EDIT)
         self.roomStateMonitor = create_task(self.monitorRoomStates())
-        await self.room.send("Well, here we are again.")
+        await self.room.send("Well, here we are again." if random.random() > 0.01 else "GOOD MORNING, MOTHERF***ERS")
         self.startupTime = datetime.now()
 
     async def monitorRoomStates(self):
@@ -375,7 +375,6 @@ class VyxalBot2(Application):
                             )
                         ]
                     )
-                    + " ^"
                 ):
                     return "Nobody to ping."
                 else:
@@ -742,8 +741,13 @@ class VyxalBot2(Application):
         self.logger.info(
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
+        
+        releaseName = release["name"].lower()
+        # attempt to match version number, otherwise default to previous behaviour
+        if match := re.search("\d.*", releaseName): 
+            releaseName = match[0]
         message = await self.room.send(
-            f'__[{event.data["repository"]["name"]} {release["name"].lower()}]({release["html_url"]})__'
+            f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         )
         if (
             event.data["repository"]["name"]
