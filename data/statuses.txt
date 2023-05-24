@@ -61,7 +61,7 @@ I am doing a stand up routine. No, I'm not JoKing
 I am doing too many things. I'm lowkey feeling burnt out
 I am doing my neighbour's lawn. That's right nerds I can control lawn mowers now
 I am doing at least 3
-I am doing a nuclear strike on your location. Prepare for radiation in 3, 2, 1..
+I am doing a nuclear strike on your location. Prepare for radiation in 3, 2, 1...
 I am doing a law degree so I can convict Rydwolf on crimes against programming languages
 I am doing my divorce papers :(. Apparently I never payed enough attention to the relationship and that instead I spent all my time responding to commands with funny responses
 I am doing a bank transfer to my ex-partner. Alimony got me feeling like big sad
@@ -84,7 +84,7 @@ I am doing my taxes. That's a joke btw I don't pay my taxes
 I am making memes
 I am making dank memes
 I am doing weirdly
-I am doing renovations to my apartment. I never did like the light fixture in the dining room..
+I am doing renovations to my apartment. I never did like the light fixture in the dining room.
 I am doing paperwork to adopt Noxan bot
 I am doing a hostile takeover of StackExchange so I can aggressively promote Vyxal
 I am doing myself
@@ -497,7 +497,6 @@ I am doing ___PHYSICS___
 I am BECOMING A __SIGMA MOD__
 I am minifying your JavaScript.
 I am emulating Vyxal in Scratch.
-I am using Hough Circles.
 I am reading My Immortal to Ginger. Good thing they don't know where I keep my off switch- oh wait
 I am doing drugs with my fire extinguisher's Internet Service Provider.
 I am drinking bleach. It goes great with boneless bananas.
@@ -511,3 +510,13 @@ I think he's coming for me, answer the phone. I can't explain until you're all a
 Potassium
 ௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌௌ
 I am doing commit verification.
+I am speaking in tongues.
+I am asking what you're REALLY selling!
+I am picking up what you're putting down.
+I am talking with Snowpaw. It's much more interesting than listening for events.
+I am plugging my ears. All this listening for events is deafening me!
+I am working to make the PDF obsolete.
+I am guessing your password.
+I am refilling GingerBot's hydraulic fluid.
+I am creating alternate accounts.
+I am waiting for one of y'all to add new idioms.
