@@ -660,7 +660,7 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
-                if assignee["login"] == event.data["sender"]["login"] and random.random() >= 0.9:  # 10% chance if self-assign
+                if assignee["login"] == event.data["sender"]["login"] and random.random() >= 0.5:  # 50% chance if self-assign
                     await self.room.send("https://i.stack.imgur.com/1VzAJ.jpg")  # Obama gives himself a medal image
             case "unassigned":
                 issue = event.data["issue"]
