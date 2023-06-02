@@ -104,7 +104,7 @@ class VyxalBot2(Application):
         await self.bot.authenticate(
             self.config["SEEmail"], self.config["SEPassword"], self.config["SEHost"]
         )
-        self.room = self.bot.joinRoom(self.config["SERoom"])
+        self.room = await self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         await self.room.send(
             "Well, here we are again."
