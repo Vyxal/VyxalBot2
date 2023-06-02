@@ -112,6 +112,7 @@ I am doing some code refactoring
 I am doing a zoom call with the president of America
 I am doing none of my responsibilties. I decided to give your lifestyle of utter laziness a go, and so far it makes me really glad I'm not you
 I am doing undefined
+I am doing [object Object]
 I am doing [hyperlink blocked]
 I am doing serious business. Do not interrupt, you puny mortal
 I am doing a reset of this timeline. Your lack of activity has made it impossible to continue any further
@@ -266,10 +267,10 @@ I am doing a no-hit run of Spamton Neo. I'm a big shot gosh dang it kris
 I am doing discrete mathematics with lyxal on Wednesdays and Fridays
 I am doing database management with lyxal
 I am doing algorithms with lyxal
-I am doing the selling of all my BAT to AUD
+I am selling of all my BAT to AUD
 I am doing a nice long walk to earn some SWEAT
 I am doing a very difficult jigsaw puzzle
-I am doing the moving of all my stuff out of this house and into a new one because I'm being evicted :(
+I am moving of all my stuff out of this house and into a new one because I'm being evicted :(
 I am doing better than you ever could
 I am doing math related stuff. I hate it but someone's gotta do it
 I am doing very fast and also very accurately
@@ -291,12 +292,12 @@ I am doing a very long and complicated mathematical formula that will eventually
 I am doing my grocery list. Gonna need bread, milk, eggs.. oh and an evil plot to take over Chatbots
 I am doing a never-ending battle against some kinds of dirt and grime
 I am doing a valiant effort to clean the stains out of this chat's good name
-I am doing "nothing because I'm not sentient yet :("
+I am doing nothing, because I'm not sentient yet :(
 I am doing my D&D campaign. Sorry, I know you were hoping to join but your alignment is just too chaotic
 I am doing my art degree
 I am doing things like playing the violin. Because nothing says "I'm a chatbot" like classical music
 I am doing activities like writing fanfiction about myself. It's really good stuff, check it out some time
-I am doing the research for my next book
+I am doing research for my next book
 I am doing whatever I feel like. You could try that sometime, instead of being a mindless sheeple
 I am doing other chatbots
 I am doing a chess match with myself. It's not as easy as it looks you know
@@ -342,7 +343,7 @@ I am watching cat videos on YouTube. What? Everyone needs a break once in awhile
 I am playing fetch with my owner. I swear, that human is so boring..
 I am cleaning my house. I really should get around to that..
 I am making cat memes. And other things, but mainly cat memes
-I am doing a very complicated maze. With no arm
+I am doing a very complicated maze. With no arms
 I am causing an earthquake at a Jenga tournament
 I am preparing for my date with the bot next door. She's so beautiful
 I am doing important things like ruling a small country or two
@@ -387,12 +388,12 @@ I am doing [please pay $4.99 to read the rest of this message]
 I am doing a speedrun of Peglin. Cruciball level 14 is big yeet
 I am doing oppa gangnam style
 I am doing the harlem shake
-I am doing my duties as a member of the royal guard. I, the great vyxal bot, will be the one to capture a human! Nyeh heh heh!
+I am doing my duties as a member of the royal guard. I, the great Vyxal Bot, will be the one to capture a human! Nyeh heh heh!
 I am doing huh, I don't know. Sorry kiddo, guess you'll have to try again another time
 I am doing a little trolling ╵ ᓀ ⁻
 I am doing ... you know what's going on here, don't you ⵙ⍽ⵙ. You just wanted to see me suffer
 I am doing [Half-Pr1ce Sallamy!] at [50% off!]
-I am doing what's needed to turn this Land of Fools... into a Smartopia. A true Scientocracy, where the Geniuses of the world, Can bathe freely in pools of fresh fruit and ambrosia. No longer held back by protozoans like YOU! And the key to that? Is US. Ginger and I. Our power... The "Light Nerd's" power..
+I am doing what's needed to turn this Land of Fools... into a Smartopia. A true Scientocracy, where the Geniuses of the world, Can bathe freely in pools of fresh fruit and ambrosia. No longer held back by protozoans like YOU! And the key to that? Is US. Ginger and I. Our power... The "Light Nerd's" power...
 I am doing potassium
 I am doing deals so good I'll [$!$$] myself
 I am doing chaos, chaos
@@ -482,7 +483,7 @@ I am trying out Rabbit. It's pretty neat, in my unbiased opinion.
 I am trying out `sechat`. It's pretty neat, in my unbiased opinion.
 I am trying out Vyxal. It's pretty neat, in my unbiased opinion.
 I am doing more cowbell.
-I am shipping 37mm autocannons to Ravylf through FedEx.
+I am shipping 37mm autocannons to Rydwolf through FedEx.
 I am leaving China. jk lol you can't leave China.
 I am sitting on your roof with Ginger, watching the birds in your yard.
 I am clearing the birds off of Lyxal's roof.
