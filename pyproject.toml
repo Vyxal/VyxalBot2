@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-gidgethub = "^5.2.1"
+gidgethub = "^5.3.0"
 sechat = { git = "https://github.com/GingerIndustries/sechat.git", branch = "v2" }
 cachetools = "^5.3.1"
 tomli = "^2.0.1"
