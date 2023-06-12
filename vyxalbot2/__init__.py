@@ -48,7 +48,7 @@ from vyxalbot2.types import ConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
-sale = []
+sale = [] # For juice command
 
 
 class VyxalBot2(Application):
