@@ -48,6 +48,7 @@ from vyxalbot2.types import ConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
+sale = []
 
 
 class VyxalBot2(Application):
@@ -573,6 +574,20 @@ class VyxalBot2(Application):
                     signal.raise_signal(signal.SIGINT)
                 else:
                     await self.room.reply(event.message_id, "Failed to pull!")
+            case "juice":
+                global sale
+                if args["state"] == "sell":
+                    sale.append({"price":args["price"],"juice":args["juice"]})
+                    await self.room.reply(event.message_id, "Sold {0} juice for {1}.".format(args["juice"],args["price"]))
+                elif args["state"] == "browse":
+                    prettified = '\n'.join("Juice number {0} is {1} juice and costs {2}.".format(sale.index(y),y["juice"],y["price"]) for y in sale)
+                    await self.room.reply(event.message_id,"Here is the catalog of juices on sale:\n\n"+prettified)
+                elif args["state"] == "buy":
+                    juicebuy = sale[int(args["number"])]
+                    del sale[int(args["number"])]
+                    await self.room.reply(event.message_id, "Bought juice number {0} for {1}.".format(args["number"],juicebuy["price"]))
+                else:
+                    await self.room.reply(event.message_id, "Hmm, this juicy transaction document appears to be illegible...")
                 
 
     async def onMessage(self, room: Room, event: MessageEvent):
