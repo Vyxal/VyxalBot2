@@ -585,7 +585,7 @@ class VyxalBot2(Application):
                 elif args["state"] == "buy":
                     juicebuy = sale[int(args["number"])]
                     del sale[int(args["number"])]
-                    await self.room.reply(event.message_id, "Bought juice number {0} for {1}.".format(args["number"],juicebuy["price"]))
+                    await self.room.reply(event.message_id, "Bought juice number {0} ({1} juice) for {2}.".format(args["number"],juicebuy["juice"],juicebuy["price"]))
                 else:
                     await self.room.reply(event.message_id, "Hmm, this juicy transaction document appears to be illegible...")
                 
