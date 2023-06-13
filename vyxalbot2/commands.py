@@ -41,7 +41,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
         r"idiom (?P<action>add) <b>(?P<title>.+)<\/b> <code>(?P<code>.+)<\/code> \"(?P<description>.+)\" (?P<keywords>[a-zA-Z0-9-?!*+=&%>< ]+)",
         r"idiom (?P<action>search) (?P<keywords>[a-zA-Z0-9-?!*+=&%>< ]+)",
     ): "idiom",
-    (r"juice (?P<state>sell) (?P<juice>.+) (?P<price>\d+)",r"juice (?P<state>browse)",r"juice (?P<state>buy) (?P<number>\d+)",r"juice (?P<state>.*)"): "juice",
+    (r"juice (?P<state>sell) (?P<juice>.+) (?P<price>\d+)",r"juice (?P<state>browse)",r"juice (?P<state>buy) (?P<number>\d+)",r"juice (?P<state>(?!buy|sell|browse).*)"): "juice",
 }
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
