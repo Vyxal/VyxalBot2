@@ -12,6 +12,8 @@ TAG_MAP = {
     "good first issue": "PR: Light and Easy",
 }
 
+GITHUB_MERGE_QUEUE = "github-merge-queue[bot]"
+
 def msgify(text):
     return (
         text.split("\n")[0]
@@ -41,7 +43,6 @@ def formatIssue(issue: dict) -> str:
 
 def formatRef(ref: str, repo: dict) -> str:
     return f'[{repo["name"]}/{ref}]({repo["html_url"]}/tree/{ref})'
-
 
 RAPTOR = r"""
                                                                    YOU CAN RUN, BUT YOU CAN'T HIDE, {user}

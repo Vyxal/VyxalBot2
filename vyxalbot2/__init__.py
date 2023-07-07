@@ -37,6 +37,7 @@ from uwuipy import uwuipy
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
+    GITHUB_MERGE_QUEUE,
     formatUser,
     formatRepo,
     formatIssue,
@@ -639,7 +640,7 @@ class VyxalBot2(Application):
             )
 
     async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
-        if event.data["ref"].split("/")[1] != "heads":
+        if event.data["ref"].split("/")[1] != "heads" or event.data['pusher']['name'] == GITHUB_MERGE_QUEUE:
             return  # It's probably a tag push
         branch = event.data["ref"].split("/")[2]
         for commit in event.data["commits"]:
@@ -732,7 +733,7 @@ class VyxalBot2(Application):
         )
 
     async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
-        if event.data["ref_type"] == "tag":
+        if event.data["ref_type"] == "tag" or event.data["sender"]["login"] == GITHUB_MERGE_QUEUE:
             return
         self.logger.info(
             f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
