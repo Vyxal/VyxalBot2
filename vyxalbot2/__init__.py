@@ -579,9 +579,9 @@ class VyxalBot2(Application):
                         if not x%n:
                             return 0
                     return 1
-                await self.room.reply(event.message_id, isprime(int(args.get("num",""))))
+                await self.room.reply(event.message_id, f"{args.get("num","")} is {"not "*1 - isprime(int(args.get("num","")))}prime.")
             case "add":
-                await self.room.reply(event.message_id, int(args.get("num1","")) + int(args.get("num2","")))
+                await self.room.reply(event.message_id, f"{args.get("num1","")} plus {args.get("num2","")} is {int(args.get("num1","")) + int(args.get("num2",""))}.")
                 
 
     async def onMessage(self, room: Room, event: MessageEvent):
