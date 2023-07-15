@@ -16,7 +16,6 @@ import re
 import codecs
 import base64
 import subprocess
-import math
 
 import tomli
 import yaml
