@@ -16,6 +16,7 @@ import re
 import codecs
 import base64
 import subprocess
+import math
 
 import tomli
 import yaml
@@ -48,7 +49,7 @@ from vyxalbot2.types import ConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
-
+MEMORY = []
 
 class VyxalBot2(Application):
     ADMIN_COMMANDS = ["die"]
@@ -573,6 +574,15 @@ class VyxalBot2(Application):
                     signal.raise_signal(signal.SIGINT)
                 else:
                     await self.room.reply(event.message_id, "Failed to pull!")
+            case "isprime":
+                def isprime(x):
+                    for n in range(2,int(x**.5)):
+                        if not x%n:
+                            return 0
+                    return 1
+                await self.room.reply(event.message_id, isprime(int(args.get("num",""))))
+            case "add":
+                await self.room.reply(event.message_id, int(args.get("num1","")) + int(args.get("num2","")))
                 
 
     async def onMessage(self, room: Room, event: MessageEvent):
