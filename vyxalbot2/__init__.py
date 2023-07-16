@@ -37,9 +37,11 @@ from uwuipy import uwuipy
 
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.util import (
+    GITHUB_MERGE_QUEUE,
     formatUser,
     formatRepo,
     formatIssue,
+    formatRef,
     msgify,
     RAPTOR,
     TAG_MAP,
@@ -84,6 +86,7 @@ class VyxalBot2(Application):
         self.on_startup.append(self.onStartup)
         self.on_cleanup.append(self.onShutdown)
 
+        self.ghRouter.add(self.onPushAction, "push")
         self.ghRouter.add(self.onIssueAction, "issues")
         self.ghRouter.add(self.onPRAction, "pull_request")
 
@@ -102,28 +105,24 @@ class VyxalBot2(Application):
         await self.bot.authenticate(
             self.config["SEEmail"], self.config["SEPassword"], self.config["SEHost"]
         )
-        self.room = self.bot.joinRoom(self.config["SERoom"])
+        self.room = await self.bot.joinRoom(self.config["SERoom"])
         self.room.register(self.onMessage, EventType.MESSAGE)
-        self.roomStateMonitor = create_task(self.monitorRoomStates())
-        await self.room.send("Well, here we are again.")
+        await self.room.send(
+            "Well, here we are again."
+            if random.random() > 0.01
+            else "GOOD MORNING, MOTHERF***ERS"
+        )
         self.startupTime = datetime.now()
 
-    async def monitorRoomStates(self):
-        try:
-            while True:
-                await self.bot.checkTasks()
-                await sleep(1)
-        except CancelledError:
-            pass
 
     async def onShutdown(self, _):
-        self.roomStateMonitor.cancel()
-        await wait_for(self.roomStateMonitor, 3)
         try:
             await self.room.send("Ah'll be bahk.")
         except RuntimeError:
             pass
-        await wait_for(self.bot.__aexit__(None, None, None), 6)  # DO NOT TRY THIS AT HOME
+        await wait_for(
+            self.bot.__aexit__(None, None, None), 6
+        )  # DO NOT TRY THIS AT HOME
         await wait_for(self.session.close(), 3)
 
     async def appToken(self, gh: GitHubAPI) -> AppToken:
@@ -349,7 +348,13 @@ class VyxalBot2(Application):
                     await self.room.reply(event.message_id, msg)
                 else:
                     await self.room.reply(
-                        event.message_id, (i + "." if not (i := random.choice(self.statuses)).endswith(".") and i.endswith(tuple(ascii_letters)) else i)
+                        event.message_id,
+                        (
+                            i + "."
+                            if not (i := random.choice(self.statuses)).endswith(".")
+                            and i.endswith(tuple(ascii_letters))
+                            else i
+                        ),
                     )
             case "permissions":
                 await self.permissionsCommand(event, args)
@@ -499,7 +504,7 @@ class VyxalBot2(Application):
                 except ValidationError as e:
                     await self.room.reply(
                         event.message_id,
-                        f"Failed to create issue: Webhook validation failed: {e.errors.get('message', 'Unknown error')}",
+                        f"Failed to create issue: Webhook validation failed: {str(e)}",
                     )
                 except GitHubHTTPException as e:
                     await self.room.reply(
@@ -573,7 +578,6 @@ class VyxalBot2(Application):
                     signal.raise_signal(signal.SIGINT)
                 else:
                     await self.room.reply(event.message_id, "Failed to pull!")
-                
 
     async def onMessage(self, room: Room, event: MessageEvent):
         try:
@@ -635,6 +639,17 @@ class VyxalBot2(Application):
                 oauth_token=token,
             )
 
+    async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
+        if event.data["ref"].split("/")[1] != "heads" or event.data['pusher']['name'] == GITHUB_MERGE_QUEUE:
+            return  # It's probably a tag push
+        branch = event.data["ref"].split("/")[2]
+        for commit in event.data["commits"]:
+            if not commit["distinct"]:
+                continue
+            await self.room.send(
+                f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data["repository"])}: {commit['message'].splitlines()[0]}"
+            )
+
     async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
         issue = event.data["issue"]
         match event.data["action"]:
@@ -646,6 +661,8 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
+                if assignee["login"] == event.data["sender"]["login"] and random.random() >= 0.5:  # 50% chance if self-assign
+                    await self.room.send("https://i.stack.imgur.com/1VzAJ.jpg")  # Obama gives himself a medal image
             case "unassigned":
                 issue = event.data["issue"]
                 assignee = event.data["assignee"]
@@ -716,7 +733,7 @@ class VyxalBot2(Application):
         )
 
     async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
-        if event.data["ref_type"] == "tag":
+        if event.data["ref_type"] == "tag" or event.data["sender"]["login"] == GITHUB_MERGE_QUEUE:
             return
         self.logger.info(
             f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
@@ -730,8 +747,13 @@ class VyxalBot2(Application):
         self.logger.info(
             f'{event.data["sender"]["login"]} released {release["html_url"]}'
         )
+
+        releaseName = release["name"].lower()
+        # attempt to match version number, otherwise default to previous behaviour
+        if match := re.search(r"\d.*", releaseName):
+            releaseName = match[0]
         message = await self.room.send(
-            f'__[{event.data["repository"]["name"]} {release["name"].lower()}]({release["html_url"]})__'
+            f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         )
         if event.data["repository"]["name"] in self.config["importantRepositories"]:
             await self.room.pin(message)
@@ -758,7 +780,7 @@ class VyxalBot2(Application):
             case _:
                 action = "did something to"
         await self.room.send(
-            f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])}'
+            f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])} in {formatRepo(event.data["repository"])}'
             + (': "' + msgify(review["body"]) + '"' if review["body"] else "")
         )
 
