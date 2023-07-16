@@ -53,8 +53,8 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (
         r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",
     ): "!good-bot",
-    (r"(hello|howdy|mornin['g]|evenin['g])( y'?all)?",): "hello",
-    (r"((good)?bye|see ya\!?|'night|goodnight)( y'?all)?",): "goodbye",
+    (r"(hello|howdy|(good )?mornin['g]|(good )?evenin['g])( y'?all)?",): "hello",
+     (r"((good)?bye|see ya\!?|'night|(good|night )night)( y'?all)?",): "goodbye",
 }
 COMMAND_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in COMMAND_REGEXES_IN.items())
