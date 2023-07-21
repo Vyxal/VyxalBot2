@@ -592,7 +592,7 @@ class VyxalBot2(Application):
                     f"Sorry {event.user_name}, I'm afraid I can't do that."
                 )
             for regex, command in MESSAGE_REGEXES.items():
-                if match := re.fullmatch(regex, unescape(event.content)):
+                if match := re.fullmatch(regex, unescape(event.content), re.I):
                     await self.runCommand(
                         room, event, command, match.groupdict() | {"__msg__": True}
                     )
