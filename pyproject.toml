@@ -16,7 +16,7 @@ platformdirs = "^3.9.1"
 pyjwt = "^2.7.0"
 python-dateutil = "^2.8.2"
 websockets = "^10.4"
-uwuipy = "^0.1.6"
+uwuivy = { git = "https://github.com/Vyxal/uwuivy.git", branch = "v0.1.0" }
 pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
