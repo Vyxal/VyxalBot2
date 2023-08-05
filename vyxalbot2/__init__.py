@@ -110,7 +110,7 @@ class VyxalBot2(Application):
         await self.room.send(
             "Well, here we are again."
             if random.random() > 0.01
-            else "GOOD MORNING, MOTHERF***ERS"
+            else "GOOD MORNING, SUCKERS!"
         )
         self.startupTime = datetime.now()
 
