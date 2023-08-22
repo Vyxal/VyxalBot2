@@ -45,7 +45,7 @@ from vyxalbot2.util import (
     msgify,
     RAPTOR,
 )
-from vyxalbot2.types import ConfigType, MessagesType, AppToken
+from vyxalbot2.types import PublicConfigType, PrivateConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
 
 __version__ = "2.0.0"
@@ -56,7 +56,8 @@ class VyxalBot2(Application):
 
     def __init__(
         self,
-        config: ConfigType,
+        publicConfig: PublicConfigType,
+        privateConfig: PrivateConfigType,
         messages: MessagesType,
         storagePath: str,
         statuses: list[str],
@@ -64,10 +65,11 @@ class VyxalBot2(Application):
         self.logger = logging.getLogger("VyxalBot2")
         super().__init__(logger=self.logger)
 
-        self.config = config
+        self.publicConfig = publicConfig
+        self.privateConfig = privateConfig
         self.messages = messages
         self.statuses = statuses
-        self.userDB = UserDB(storagePath, self.config["groups"])
+        self.userDB = UserDB(storagePath, self.publicConfig["groups"])
         self.errorsSinceStartup = 0
 
         self.bot = Bot(logger=self.logger)
@@ -78,7 +80,7 @@ class VyxalBot2(Application):
         self.gh = AsyncioGitHubAPI(self.session, "VyxalBot2", cache=self.cache)
         self.runningTasks = set()
 
-        with open(self.config["pem"], "r") as f:
+        with open(self.privateConfig["pem"], "r") as f:
             self.privkey = f.read()
 
         self.router.add_post("/webhook", self.onHookRequest)
@@ -102,9 +104,9 @@ class VyxalBot2(Application):
 
     async def onStartup(self, _):
         await self.bot.authenticate(
-            self.config["chat"]["email"], self.config["chat"]["password"], self.config["chat"]["host"]
+            self.privateConfig["chat"]["email"], self.privateConfig["chat"]["password"], self.privateConfig["chat"]["host"]
         )
-        self.room = await self.bot.joinRoom(self.config["chat"]["room"])
+        self.room = await self.bot.joinRoom(self.privateConfig["chat"]["room"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         await self.room.send(
             "Well, here we are again."
@@ -128,16 +130,16 @@ class VyxalBot2(Application):
         if self._appToken != None:
             if self._appToken.expires.timestamp() > time():
                 return self._appToken
-        jwt = get_jwt(app_id=self.config["appID"], private_key=self.privkey)
+        jwt = get_jwt(app_id=self.privateConfig["appID"], private_key=self.privkey)
         async for installation in gh.getiter(
             "/app/installations",
             jwt=jwt,
         ):
-            if installation["account"]["login"] == self.config["account"]:
+            if installation["account"]["login"] == self.privateConfig["account"]:
                 tokenData = await get_installation_access_token(
                     gh,
                     installation_id=installation["id"],
-                    app_id=self.config["appID"],
+                    app_id=self.privateConfig["appID"],
                     private_key=self.privkey,
                 )
                 self._appToken = AppToken(
@@ -151,7 +153,7 @@ class VyxalBot2(Application):
         try:
             body = await request.read()
             event = GitHubEvent.from_http(
-                request.headers, body, secret=self.config["webhookSecret"]
+                request.headers, body, secret=self.privateConfig["webhookSecret"]
             )
             self.logger.info(f"Recieved delivery #{event.delivery_id} ({event.event})")
             if event.event == "ping":
@@ -202,7 +204,7 @@ class VyxalBot2(Application):
                     return
                 args["permission"] = args["permission"].removesuffix("s")
                 try:
-                    promotionRequires = self.config["groups"][args["permission"]].get(
+                    promotionRequires = self.publicConfig["groups"][args["permission"]].get(
                         "promotionRequires", []
                     )
                     if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires):  # type: ignore
@@ -276,7 +278,7 @@ class VyxalBot2(Application):
     ):
         if event.user_id == room.userID:
             return
-        for groupName, group in self.config["groups"].items():
+        for groupName, group in self.publicConfig["groups"].items():
             if command in group.get("canRun", []) and not (
                 groupName in r["groups"]
                 if (r := self.userDB.getUserInfo(event.user_id))
@@ -376,7 +378,7 @@ class VyxalBot2(Application):
                     case "list":
                         await self.room.reply(
                             event.message_id,
-                            f"All groups: {', '.join(self.config['groups'].keys())}",
+                            f"All groups: {', '.join(self.publicConfig['groups'].keys())}",
                         )
                     case "members":
                         args["group"] = args["group"].removesuffix("s")
@@ -427,7 +429,7 @@ class VyxalBot2(Application):
                         [
                             formatRepo(item, False)
                             async for item in self.gh.getiter(
-                                f"/users/{self.config['account']}/repos",
+                                f"/users/{self.privateConfig['account']}/repos",
                                 {"sort": "created"},
                                 oauth_token=(await self.appToken(self.gh)).token,
                             )
@@ -436,7 +438,7 @@ class VyxalBot2(Application):
                 )
             case "!issue-open":
                 try:
-                    repo = args["repo"] or self.config["baseRepo"]
+                    repo = args["repo"] or self.privateConfig["baseRepo"]
                     # ICKY SPECIAL CASING
                     if repo == "Vyxal":
                         if not isinstance(args["labels"], str):
@@ -452,7 +454,7 @@ class VyxalBot2(Application):
                                 'You must specify one of "version-2" or "version-3" as a label!',
                             )
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{repo}/issues",
+                        f"/repos/{self.privateConfig['account']}/{repo}/issues",
                         data={
                             "title": args["title"],
                             "body": args["content"]
@@ -483,19 +485,19 @@ class VyxalBot2(Application):
                 )
             case "prod":
                 if (
-                    repo := (args["repo"] if args["repo"] else self.config["baseRepo"])
-                ) not in self.config["production"].keys():
+                    repo := (args["repo"] if args["repo"] else self.privateConfig["baseRepo"])
+                ) not in self.publicConfig["production"].keys():
                     return await self.room.reply(
                         event.message_id,
                         f"That repository isn't listed in config.json.",
                     )
                 try:
                     await self.gh.post(
-                        f"/repos/{self.config['account']}/{repo}/pulls",
+                        f"/repos/{self.privateConfig['account']}/{repo}/pulls",
                         data={
                             "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
-                            "head": self.config["production"][repo]["head"],
-                            "base": self.config["production"][repo]["base"],
+                            "head": self.publicConfig["production"][repo]["head"],
+                            "base": self.publicConfig["production"][repo]["base"],
                             "body": f"Requested by {event.user_name} [here]({f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id})'}.",
                         },
                         oauth_token=(await self.appToken(self.gh)).token,
@@ -514,7 +516,7 @@ class VyxalBot2(Application):
                 match args["action"]:
                     case "add":
                         file = await self.gh.getitem(
-                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
                             oauth_token=(await self.appToken(self.gh)).token,
                         )
                         idioms = yaml.safe_load(base64.b64decode(file["content"]))
@@ -535,7 +537,7 @@ class VyxalBot2(Application):
                             }
                         )
                         await self.gh.put(
-                            f"/repos/{self.config['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+                            f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
                             data={
                                 "message": f"Added \"{args['title']}\" to the idiom list.\nRequested by {event.user_name} here: {f'https://chat.stackexchange.com/transcript/{event.room_id}?m={event.message_id}#{event.message_id}'}",
                                 "content": base64.b64encode(
@@ -605,7 +607,7 @@ class VyxalBot2(Application):
 
     async def autoTag(self, event: GitHubEvent, gh: GitHubAPI):
         pullRequest = event.data["pull_request"]
-        if event.data["repository"]["name"] not in self.config["importantRepositories"]:
+        if event.data["repository"]["name"] not in self.publicConfig["importantRepositories"]:
             return
         if len(pullRequest["labels"]):
             return
@@ -628,7 +630,7 @@ class VyxalBot2(Application):
                             filter(
                                 None,
                                 map(
-                                    lambda i: self.config["autotag"].get(i["name"], False),
+                                    lambda i: self.publicConfig["autotag"].get(i["name"], False),
                                     issue["labels"],
                                 ),
                             )
@@ -754,7 +756,7 @@ class VyxalBot2(Application):
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         )
-        if event.data["repository"]["name"] in self.config["importantRepositories"]:
+        if event.data["repository"]["name"] in self.publicConfig["importantRepositories"]:
             await self.room.pin(message)
 
     async def onFork(self, event: GitHubEvent, gh: GitHubAPI):
@@ -795,7 +797,8 @@ class VyxalBot2(Application):
 
 
 def run():
-    CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG", "config.json")
+    PUBLIC_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PUBLIC", "config.json")
+    PRIVATE_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PRIVATE", "private.json")
     STORAGE_PATH = user_state_path("vyxalbot2", None, __version__)
     os.makedirs(STORAGE_PATH, exist_ok=True)
     DATA_PATH = Path(__file__).resolve().parent.parent / "data"
@@ -808,8 +811,10 @@ def run():
         level=logging.DEBUG,
     )
 
-    with open(CONFIG_PATH, "r") as f:
-        config = json.load(f)
+    with open(PUBLIC_CONFIG_PATH, "r") as f:
+        publicConfig = json.load(f)
+    with open(PRIVATE_CONFIG_PATH, "r") as f:
+        privateConfig = json.load(f)
     with open(MESSAGES_PATH, "rb") as f:
         messages = tomli.load(f)
     with open(STATUSES_PATH, "r") as f:
@@ -817,7 +822,7 @@ def run():
 
     async def makeApp():
         return VyxalBot2(
-            config, cast(Any, messages), str(STORAGE_PATH / "storage.json"), statuses
+            publicConfig, privateConfig, cast(Any, messages), str(STORAGE_PATH / "storage.json"), statuses
         )
 
-    run_app(makeApp(), port=config["port"])
+    run_app(makeApp(), port=privateConfig["port"])

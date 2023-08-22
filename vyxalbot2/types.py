@@ -17,7 +17,7 @@ class ChatConfigType(TypedDict):
     email: str
     password: str
 
-class ConfigType(TypedDict):
+class PrivateConfigType(TypedDict):
     port: int
 
     account: str
@@ -28,14 +28,11 @@ class ConfigType(TypedDict):
 
     chat: ChatConfigType
 
+class PublicConfigType(TypedDict):
     importantRepositories: list[str]
-
     groups: dict[str, GroupType]
-
     production: dict[str, ProductionType]
-
     autotag: dict[str, str]
-
 
 class MessagesType(TypedDict):
     help: str

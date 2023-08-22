@@ -133,4 +133,4 @@ dmypy.json
 
 secrets/
 
-config.json
+private.json
