@@ -630,7 +630,7 @@ class VyxalBot2(Application):
                             filter(
                                 None,
                                 map(
-                                    lambda i: self.publicConfig["autotag"].get(i["name"], False),
+                                    lambda i: self.publicConfig["autotag"].get(event.data['repository']['full_name'], self.publicConfig["autotag"]["*"]).get(i["name"], False),
                                     issue["labels"],
                                 ),
                             )

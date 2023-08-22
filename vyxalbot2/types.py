@@ -32,7 +32,7 @@ class PublicConfigType(TypedDict):
     importantRepositories: list[str]
     groups: dict[str, GroupType]
     production: dict[str, ProductionType]
-    autotag: dict[str, str]
+    autotag: dict[str, dict[str, str]]
 
 class MessagesType(TypedDict):
     help: str
