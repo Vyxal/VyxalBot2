@@ -392,6 +392,7 @@ class VyxalBot2(Application):
                         [
                             "@" + user["name"]
                             for user in self.userDB.membersOfGroup(args["group"])
+                            if user["id"] != event.user_id
                         ]
                     )
                 ):
