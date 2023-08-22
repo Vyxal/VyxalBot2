@@ -11,6 +11,12 @@ class ProductionType(TypedDict):
     head: str
     base: str
 
+class ChatConfigType(TypedDict):
+    host: str
+    room: int
+    email: str
+    password: str
+
 class ConfigType(TypedDict):
     port: int
 
@@ -20,10 +26,7 @@ class ConfigType(TypedDict):
     pem: str
     webhookSecret: str
 
-    SERoom: int
-    SEEmail: str
-    SEPassword: str
-    SEHost: str
+    chat: ChatConfigType
 
     importantRepositories: list[str]
 

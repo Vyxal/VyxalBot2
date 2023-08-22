@@ -103,9 +103,9 @@ class VyxalBot2(Application):
 
     async def onStartup(self, _):
         await self.bot.authenticate(
-            self.config["SEEmail"], self.config["SEPassword"], self.config["SEHost"]
+            self.config["chat"]["email"], self.config["chat"]["password"], self.config["chat"]["host"]
         )
-        self.room = await self.bot.joinRoom(self.config["SERoom"])
+        self.room = await self.bot.joinRoom(self.config["chat"]["room"])
         self.room.register(self.onMessage, EventType.MESSAGE)
         await self.room.send(
             "Well, here we are again."
