@@ -34,6 +34,8 @@ class ConfigType(TypedDict):
 
     production: dict[str, ProductionType]
 
+    autotag: dict[str, str]
+
 
 class MessagesType(TypedDict):
     help: str

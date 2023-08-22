@@ -44,7 +44,6 @@ from vyxalbot2.util import (
     formatRef,
     msgify,
     RAPTOR,
-    TAG_MAP,
 )
 from vyxalbot2.types import ConfigType, MessagesType, AppToken
 from vyxalbot2.commands import COMMAND_REGEXES, MESSAGE_REGEXES, COMMAND_ALIASES
@@ -629,7 +628,7 @@ class VyxalBot2(Application):
                             filter(
                                 None,
                                 map(
-                                    lambda i: TAG_MAP.get(i["name"], False),
+                                    lambda i: self.config["autotag"].get(i["name"], False),
                                     issue["labels"],
                                 ),
                             )

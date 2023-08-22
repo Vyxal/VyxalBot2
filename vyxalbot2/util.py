@@ -1,17 +1,3 @@
-TAG_MAP = {
-    "bug": "PR: Bug Fix",
-    "documentation": "PR: Documentation Fix",
-    "request: element": "PR: Element Implementation",
-    "enhancement": "PR: Enhancement",
-    "difficulty: very hard": "PR: Careful Review Required",
-    "priority: high": "PR: Urgent Review Required",
-    "online interpreter": "PR: Online Interpreter",
-    "version-3": "PR: Version 3 Related",
-    "version-2": "PR: Version 2 Related",
-    "difficulty: easy": "PR: Light and Easy",
-    "good first issue": "PR: Light and Easy",
-}
-
 GITHUB_MERGE_QUEUE = "github-merge-queue[bot]"
 
 def msgify(text):
