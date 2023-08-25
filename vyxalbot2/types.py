@@ -11,7 +11,13 @@ class ProductionType(TypedDict):
     head: str
     base: str
 
-class ConfigType(TypedDict):
+class ChatConfigType(TypedDict):
+    host: str
+    room: int
+    email: str
+    password: str
+
+class PrivateConfigType(TypedDict):
     port: int
 
     account: str
@@ -20,17 +26,13 @@ class ConfigType(TypedDict):
     pem: str
     webhookSecret: str
 
-    SERoom: int
-    SEEmail: str
-    SEPassword: str
-    SEHost: str
+    chat: ChatConfigType
 
+class PublicConfigType(TypedDict):
     importantRepositories: list[str]
-
     groups: dict[str, GroupType]
-
     production: dict[str, ProductionType]
-
+    autotag: dict[str, dict[str, str]]
 
 class MessagesType(TypedDict):
     help: str
