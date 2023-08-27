@@ -391,7 +391,7 @@ class VyxalBot2(Application):
                 if not len(
                     message := " ".join(
                         [
-                            "@" + user["name"]
+                            "@" + user["name"].replace(" ", "")
                             for user in self.userDB.membersOfGroup(args["group"])
                             if user["id"] != event.user_id
                         ]
