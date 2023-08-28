@@ -362,7 +362,8 @@ class VyxalBot2(Application):
                 await self.permissionsCommand(event, args)
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
-                    self.userDB.removeUserFromDatabase(event.user_id)
+                    await self.room.reply(event.message_id, "You are already registered. To refresh your details, use !!/refresh.")
+                    return
                 self.userDB.addUserToDatabase(
                     await (
                         await self.session.get(
