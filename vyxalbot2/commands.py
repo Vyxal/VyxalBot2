@@ -22,6 +22,7 @@ COMMAND_REGEXES_IN: dict[tuple[str, ...], str] = {
     ): "permissions",
     (r"groups (?P<action>list)", r"groups (?P<action>members) (?P<group>.+)"): "groups",
     (r"register",): "register",
+    (r"refresh",): "refresh",
     (r"ping (?P<group>\w+)( (?P<message>.+))?",): "ping",
     (r"(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
     (r"hug",): "hug",

@@ -44,6 +44,7 @@ groups = "`!!/groups <list|members> [group]`: List all groups or members of a ce
 maul = "`!!/maul <user>`: THEY'RE COMING"
 coffee = "`!!/coffee <user|me>`: Brew some coffee"
 register = "`!!/register`: Register yourself with the bot. This is required for you to be granted permissions."
+refresh = "`!!/refresh`: Refresh your user details in the bot's database."
 ping = "`!!/ping <group> [message]`: Ping all members of the group. USE WITH CAUTION!"
 cookie = "`!!/cookie`: Make you a cookie. Maybe. You have to be worthy."
 hug = "`!!/hug`: <3"

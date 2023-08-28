@@ -19,6 +19,9 @@ class UserDB:
             {"chatID": userData["id"], "name": userData["name"], "groups": []}
         )
 
+    def refreshUserData(self, userData: dict):
+        self._db.update({"name": userData["name"]}, Query().chatID == userData["id"])
+
     def removeUserFromDatabase(self, user: int):
         self._db.remove(Query().chatID == user)
 

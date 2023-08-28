@@ -374,6 +374,20 @@ class VyxalBot2(Application):
                     event.message_id,
                     "You have been registered! You don't have any permissions yet; ping an admin if you think you should.",
                 )
+            case "refresh":
+                if not (info := self.userDB.getUserInfo(event.user_id)):
+                    await self.room.reply(
+                        event.message_id, "You are not in my database. Please run !!/register."
+                    )
+                    return
+                self.userDB.refreshUserData(
+                    await (
+                        await self.session.get(
+                            f"https://chat.stackexchange.com/users/thumbs/{event.user_id}"
+                        )
+                    ).json()
+                )
+                await self.room.reply(event.message_id, "Your details have been updated.")
             case "groups":
                 match args["action"]:
                     case "list":
