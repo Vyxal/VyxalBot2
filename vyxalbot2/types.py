@@ -7,15 +7,18 @@ class GroupType(TypedDict, total=False):
     promotionRequires: list[str]
     canRun: list[str]
 
+
 class ProductionType(TypedDict):
     head: str
     base: str
+
 
 class ChatConfigType(TypedDict):
     host: str
     room: int
     email: str
     password: str
+
 
 class PrivateConfigType(TypedDict):
     port: int
@@ -28,11 +31,13 @@ class PrivateConfigType(TypedDict):
 
     chat: ChatConfigType
 
+
 class PublicConfigType(TypedDict):
     importantRepositories: list[str]
     groups: dict[str, GroupType]
     production: dict[str, ProductionType]
     autotag: dict[str, dict[str, str]]
+
 
 class MessagesType(TypedDict):
     help: str

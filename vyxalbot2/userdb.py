@@ -26,19 +26,15 @@ class UserDB:
         if group in user["groups"]:
             return False
         user["groups"].append(group)
-        self._db.update(
-            {"groups": user["groups"]}, Query().chatID == user["chatID"]
-        )
+        self._db.update({"groups": user["groups"]}, Query().chatID == user["chatID"])
         return True
 
     def removeUserFromGroup(self, user: Document, group: str):
         user["groups"].remove(group)
-        self._db.update(
-            {"groups": user["groups"]}, Query().chatID == user["chatID"]
-        )
+        self._db.update({"groups": user["groups"]}, Query().chatID == user["chatID"])
 
     def membersOfGroup(self, group: str):
         return self._db.search(Query().groups.any([group]))
-    
+
     def users(self):
         return self._db.all()

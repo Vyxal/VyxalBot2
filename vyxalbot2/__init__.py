@@ -104,7 +104,9 @@ class VyxalBot2(Application):
 
     async def onStartup(self, _):
         await self.bot.authenticate(
-            self.privateConfig["chat"]["email"], self.privateConfig["chat"]["password"], self.privateConfig["chat"]["host"]
+            self.privateConfig["chat"]["email"],
+            self.privateConfig["chat"]["password"],
+            self.privateConfig["chat"]["host"],
         )
         self.room = await self.bot.joinRoom(self.privateConfig["chat"]["room"])
         self.room.register(self.onMessage, EventType.MESSAGE)
@@ -114,7 +116,6 @@ class VyxalBot2(Application):
             else "GOOD MORNING, MOTHERF***ERS"
         )
         self.startupTime = datetime.now()
-
 
     async def onShutdown(self, _):
         try:
@@ -204,9 +205,9 @@ class VyxalBot2(Application):
                     return
                 args["permission"] = args["permission"].removesuffix("s")
                 try:
-                    promotionRequires = self.publicConfig["groups"][args["permission"]].get(
-                        "promotionRequires", []
-                    )
+                    promotionRequires = self.publicConfig["groups"][
+                        args["permission"]
+                    ].get("promotionRequires", [])
                     if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires):  # type: ignore
                         await self.room.reply(
                             event.message_id,
@@ -486,7 +487,9 @@ class VyxalBot2(Application):
                 )
             case "prod":
                 if (
-                    repo := (args["repo"] if args["repo"] else self.privateConfig["baseRepo"])
+                    repo := (
+                        args["repo"] if args["repo"] else self.privateConfig["baseRepo"]
+                    )
                 ) not in self.publicConfig["production"].keys():
                     return await self.room.reply(
                         event.message_id,
@@ -608,7 +611,10 @@ class VyxalBot2(Application):
 
     async def autoTag(self, event: GitHubEvent, gh: GitHubAPI):
         pullRequest = event.data["pull_request"]
-        if event.data["repository"]["name"] not in self.publicConfig["importantRepositories"]:
+        if (
+            event.data["repository"]["name"]
+            not in self.publicConfig["importantRepositories"]
+        ):
             return
         if len(pullRequest["labels"]):
             return
@@ -631,7 +637,12 @@ class VyxalBot2(Application):
                             filter(
                                 None,
                                 map(
-                                    lambda i: self.publicConfig["autotag"].get(event.data['repository']['full_name'], self.publicConfig["autotag"]["*"]).get(i["name"], False),
+                                    lambda i: self.publicConfig["autotag"]
+                                    .get(
+                                        event.data["repository"]["full_name"],
+                                        self.publicConfig["autotag"]["*"],
+                                    )
+                                    .get(i["name"], False),
                                     issue["labels"],
                                 ),
                             )
@@ -642,7 +653,10 @@ class VyxalBot2(Application):
             )
 
     async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
-        if event.data["ref"].split("/")[1] != "heads" or event.data['pusher']['name'] == GITHUB_MERGE_QUEUE:
+        if (
+            event.data["ref"].split("/")[1] != "heads"
+            or event.data["pusher"]["name"] == GITHUB_MERGE_QUEUE
+        ):
             return  # It's probably a tag push
         branch = event.data["ref"].split("/")[2]
         for commit in event.data["commits"]:
@@ -663,8 +677,13 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} assigned {formatUser(assignee)} to issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
-                if assignee["login"] == event.data["sender"]["login"] and random.random() >= 0.5:  # 50% chance if self-assign
-                    await self.room.send("https://i.stack.imgur.com/1VzAJ.jpg")  # Obama gives himself a medal image
+                if (
+                    assignee["login"] == event.data["sender"]["login"]
+                    and random.random() >= 0.5
+                ):  # 50% chance if self-assign
+                    await self.room.send(
+                        "https://i.stack.imgur.com/1VzAJ.jpg"
+                    )  # Obama gives himself a medal image
             case "unassigned":
                 issue = event.data["issue"]
                 assignee = event.data["assignee"]
@@ -735,7 +754,10 @@ class VyxalBot2(Application):
         )
 
     async def onThingDeleted(self, event: GitHubEvent, gh: GitHubAPI):
-        if event.data["ref_type"] == "tag" or event.data["sender"]["login"] == GITHUB_MERGE_QUEUE:
+        if (
+            event.data["ref_type"] == "tag"
+            or event.data["sender"]["login"] == GITHUB_MERGE_QUEUE
+        ):
             return
         self.logger.info(
             f'{event.data["sender"]["login"]} deleted {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
@@ -757,7 +779,10 @@ class VyxalBot2(Application):
         message = await self.room.send(
             f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         )
-        if event.data["repository"]["name"] in self.publicConfig["importantRepositories"]:
+        if (
+            event.data["repository"]["name"]
+            in self.publicConfig["importantRepositories"]
+        ):
             await self.room.pin(message)
 
     async def onFork(self, event: GitHubEvent, gh: GitHubAPI):
@@ -823,7 +848,11 @@ def run():
 
     async def makeApp():
         return VyxalBot2(
-            publicConfig, privateConfig, cast(Any, messages), str(STORAGE_PATH / "storage.json"), statuses
+            publicConfig,
+            privateConfig,
+            cast(Any, messages),
+            str(STORAGE_PATH / "storage.json"),
+            statuses,
         )
 
     run_app(makeApp(), port=privateConfig["port"])
