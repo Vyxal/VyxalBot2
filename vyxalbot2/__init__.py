@@ -649,7 +649,7 @@ class VyxalBot2(Application):
             if not commit["distinct"]:
                 continue
             await self.room.send(
-                f"{event.data['pusher']['name']} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
+                f"{formatUser(event.data['pusher'])} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
             )
 
     async def onIssueAction(self, event: GitHubEvent, gh: GitHubAPI):
