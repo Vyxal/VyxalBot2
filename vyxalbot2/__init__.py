@@ -693,7 +693,14 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} unassigned {formatUser(assignee)} from issue {formatIssue(issue)} in {formatRepo(event.data["repository"])}'
                 )
-            case _ as action if action in ["closed", "opened", "reopened"]:
+            case "closed":
+                self.logger.info(
+                    f'Issue {issue["number"]} closed as {issue["state_reason"]} in {issue["repository_url"]}'
+                )
+                await self.room.send(
+                    f'{formatUser(event.data["sender"])} closed issue {formatIssue(issue)} as {issue["state_reason"]} in {formatRepo(event.data["repository"])}'
+                )
+            case _ as action if action in ["opened", "reopened"]:
                 self.logger.info(
                     f'Issue {issue["number"]} {action} in {issue["repository_url"]}'
                 )
