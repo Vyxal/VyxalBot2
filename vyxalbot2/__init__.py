@@ -2,7 +2,7 @@ from typing import Optional, cast, Any
 from time import time
 from datetime import datetime
 from pathlib import Path
-from asyncio import create_task, CancelledError, wait_for, sleep
+from asyncio import create_task, wait_for
 from html import unescape
 from string import ascii_letters
 
@@ -10,7 +10,6 @@ import logging
 import sys
 import json
 import os
-import signal
 import random
 import re
 import codecs
@@ -293,7 +292,7 @@ class VyxalBot2(Application):
                 return
         match command:
             case "die":
-                signal.raise_signal(signal.SIGINT)
+                exit(-42)
             case "help":
                 if commandName := args.get("command", ""):
                     if commandName == "me":
@@ -605,7 +604,7 @@ class VyxalBot2(Application):
             case "pull":
                 if subprocess.run(["git", "pull"]).returncode == 0:
                     await self.room.reply(event.message_id, "Restarting...")
-                    signal.raise_signal(signal.SIGINT)
+                    exit(-43)
                 else:
                     await self.room.reply(event.message_id, "Failed to pull!")
 
