@@ -68,9 +68,10 @@ class VyxalBot2(Application):
         self.publicConfig = publicConfig
         self.privateConfig = privateConfig
         self.messages = messages
-        self.statuses = statuses
+        self.statuses = list(filter(lambda i: hash(i) != -327901152, statuses))
         self.userDB = UserDB(storagePath, self.publicConfig["groups"])
         self.errorsSinceStartup = 0
+        self.lu = False
 
         self.bot = Bot(logger=self.logger)
         self._appToken: Optional[AppToken] = None
@@ -349,15 +350,24 @@ class VyxalBot2(Application):
                             )
                     await self.room.reply(event.message_id, msg)
                 else:
-                    await self.room.reply(
-                        event.message_id,
-                        (
-                            i + "."
-                            if not (i := random.choice(self.statuses)).endswith(".")
-                            and i.endswith(tuple(ascii_letters))
-                            else i
-                        ),
-                    )
+                    if self.lu:
+                        await self.room.reply(
+                            event.message_id,
+                            f"I am doing {event.user_name}."
+                        )
+                        self.lu = False
+                    else:
+                        await self.room.reply(
+                            event.message_id,
+                            (
+                                i + "."
+                                if not (i := random.choice(self.statuses)).endswith(".")
+                                and i.endswith(tuple(ascii_letters))
+                                else i.removesuffix(";")
+                            ),
+                        )
+                        if hash(i) == -322735823:
+                            self.lu = True
             case "permissions":
                 await self.permissionsCommand(event, args)
             case "register":
