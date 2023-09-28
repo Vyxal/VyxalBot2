@@ -781,6 +781,8 @@ class VyxalBot2(Application):
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         if event.data["ref_type"] == "tag":
             return
+        if event.data["sender"]["login"] == GITHUB_MERGE_QUEUE:
+            return
         self.logger.info(
             f'{event.data["sender"]["login"]} created {event.data["ref_type"]} {event.data["ref"]} in {event.data["repository"]["html_url"]}'
         )
