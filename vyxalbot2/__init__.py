@@ -351,8 +351,7 @@ class VyxalBot2(Application):
                 else:
                     if self.lu:
                         await self.room.reply(
-                            event.message_id,
-                            f"I am doing {event.user_name}."
+                            event.message_id, f"I am doing {event.user_name}."
                         )
                         self.lu = False
                     else:
@@ -371,7 +370,10 @@ class VyxalBot2(Application):
                 await self.permissionsCommand(event, args)
             case "register":
                 if self.userDB.getUserInfo(event.user_id):
-                    await self.room.reply(event.message_id, "You are already registered. To refresh your details, use !!/refresh.")
+                    await self.room.reply(
+                        event.message_id,
+                        "You are already registered. To refresh your details, use !!/refresh.",
+                    )
                     return
                 self.userDB.addUserToDatabase(
                     await (
@@ -387,7 +389,8 @@ class VyxalBot2(Application):
             case "refresh":
                 if not (info := self.userDB.getUserInfo(event.user_id)):
                     await self.room.reply(
-                        event.message_id, "You are not in my database. Please run !!/register."
+                        event.message_id,
+                        "You are not in my database. Please run !!/register.",
                     )
                     return
                 self.userDB.refreshUserData(
@@ -397,7 +400,9 @@ class VyxalBot2(Application):
                         )
                     ).json()
                 )
-                await self.room.reply(event.message_id, "Your details have been updated.")
+                await self.room.reply(
+                    event.message_id, "Your details have been updated."
+                )
             case "groups":
                 match args["action"]:
                     case "list":
@@ -633,7 +638,7 @@ class VyxalBot2(Application):
             self.logger.exception(msg)
             self.errorsSinceStartup += 1
 
-    async def autoTag(self, event: GitHubEvent, gh: GitHubAPI):
+    async def autoTagPR(self, event: GitHubEvent, gh: GitHubAPI):
         pullRequest = event.data["pull_request"]
         if (
             event.data["repository"]["name"]
@@ -642,39 +647,39 @@ class VyxalBot2(Application):
             return
         if len(pullRequest["labels"]):
             return
-        if not pullRequest["body"]:
-            return
+        
         token = (await self.appToken(gh)).token
-        for match in re.finditer(
-            r"(([Cc]lose[sd]?)|([Ff]ix(e[sd])?)|([Rr]esolve[sd]?)) #(?P<number>\d+)",
-            pullRequest["body"],
-        ):
-            issue = await gh.getitem(
-                f"/repos/{event.data['repository']['full_name']}/issues/{int(match.group('number'))}",
-                oauth_token=token,
-            )
-            await gh.patch(
-                f"/repos/{event.data['repository']['full_name']}/issues/{pullRequest['number']}",
-                data={
-                    "labels": list(
-                        set(
-                            filter(
-                                None,
-                                map(
-                                    lambda i: self.publicConfig["autotag"]
-                                    .get(
-                                        event.data["repository"]["full_name"],
-                                        self.publicConfig["autotag"]["*"],
-                                    )
-                                    .get(i["name"], False),
-                                    issue["labels"],
-                                ),
-                            )
-                        )
+        autotagConfig = self.publicConfig["autotag"].get(
+            event.data["repository"]["full_name"], self.publicConfig["autotag"].get("*", {"prregex": {}, "issue2pr": {}})
+        )
+        tags = set()
+        for regex, tag in autotagConfig["prregex"].items():
+            if re.fullmatch(regex, pullRequest["head"]["ref"]) is not None:
+                tags.add(tag)
+        if pullRequest["body"]:
+            for match in re.finditer(
+                r"(([Cc]lose[sd]?)|([Ff]ix(e[sd])?)|([Rr]esolve[sd]?)) #(?P<number>\d+)",
+                pullRequest["body"],
+            ):
+                issue = await gh.getitem(
+                    f"/repos/{event.data['repository']['full_name']}/issues/{int(match.group('number'))}",
+                    oauth_token=token,
+                )
+                tags.update(
+                    filter(
+                        None,
+                        map(
+                            lambda i: autotagConfig["issue2pr"].get(i["name"], False),
+                            issue["labels"],
+                        ),
                     )
-                },
-                oauth_token=token,
-            )
+                )
+
+        await gh.patch(
+            f"/repos/{event.data['repository']['full_name']}/issues/{pullRequest['number']}",
+            data={"labels": list(tags)},
+            oauth_token=token,
+        )
 
     async def onPushAction(self, event: GitHubEvent, gh: GitHubAPI):
         if (
@@ -776,7 +781,7 @@ class VyxalBot2(Application):
                     f'{formatUser(event.data["sender"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 )
                 if action == "opened":
-                    await self.autoTag(event, gh)
+                    await self.autoTagPR(event, gh)
 
     async def onThingCreated(self, event: GitHubEvent, gh: GitHubAPI):
         if event.data["ref_type"] == "tag":
