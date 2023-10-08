@@ -31,12 +31,15 @@ class PrivateConfigType(TypedDict):
 
     chat: ChatConfigType
 
+class AutotagType(TypedDict):
+    issue2pr: dict[str, str]
+    prregex: dict[str, str]
 
 class PublicConfigType(TypedDict):
     importantRepositories: list[str]
     groups: dict[str, GroupType]
     production: dict[str, ProductionType]
-    autotag: dict[str, dict[str, str]]
+    autotag: dict[str, AutotagType]
 
 
 class MessagesType(TypedDict):
