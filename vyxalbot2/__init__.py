@@ -770,6 +770,11 @@ class VyxalBot2(Application):
                 await self.room.send(
                     f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
                 )
+            case "ready_for_review":
+                await self.room.send(
+                    f'{formatUser(event.data["sender"])} marked pull request {formatIssue(pullRequest)} ready for review'
+                )
+                
             case _ as action if action in ["opened", "reopened", "enqueued"]:
                 self.logger.info(
                     f'Pull request {pullRequest["number"]} {action} in {event.data["repository"]["html_url"]}'
