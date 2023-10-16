@@ -7,6 +7,7 @@ import re
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
 
+from ..types import PublicConfigType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
 
@@ -16,9 +17,10 @@ class User:
     ident: int
 
 class Chat(Room):
-    def __init__(self, room: Room, userDB: UserDB):
+    def __init__(self, room: Room, userDB: UserDB, config: PublicConfigType):
         self.room = room
         self.userDB = userDB
+        self.config = config
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b async for a, b in self.getCommands()}
         self.parser = CommandParser(self.commands)
@@ -33,6 +35,8 @@ class Chat(Room):
             yield re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__), attr
 
     async def onMessage(self, message: MessageEvent):
+        if message.user_id == self.room.userID:
+            return
         if not message.content.startswith("!!/"):
             return
         sentAt = datetime.now()
@@ -43,6 +47,8 @@ class Chat(Room):
         self.editDB[message.message_id] = (sentAt, responseIDs)
 
     async def onEdit(self, edit: EditEvent):
+        if edit.user_id == self.room.userID:
+            return
         if not edit.content.startswith("!!/"):
             return
         if edit.message_id not in self.editDB:
@@ -64,9 +70,19 @@ class Chat(Room):
 
     async def processMessage(self, message: str, user: User):
         try:
-            impl, args = self.parser.parseCommand(message)
+            commandName, impl, args = self.parser.parseCommand(message)
         except ParseError as e:
             yield e.message
             return
+        userInfo = self.userDB.getUserInfo(user.ident)
+        for groupName, group in self.config["groups"].items():
+            if commandName in group.get("canRun", []):
+                if userInfo is not None:
+                    if groupName not in userInfo["groups"]:
+                        yield f"Only members of group {groupName} can run !!/{commandName}"
+                        return
+                else:
+                    yield f"Only members of group {groupName} can run !!/{commandName}"
+                    return
         async for l in impl(user, *args):
             yield l

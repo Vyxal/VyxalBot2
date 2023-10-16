@@ -168,5 +168,5 @@ class CommandParser:
             if argType != paramType:
                 raise ParseError(f"Expected {paramType.name} for {paramName} but got {argType.name}")
             argValues.append(argValue)
-        return impl, argValues
+        return commandName, impl, argValues
         
