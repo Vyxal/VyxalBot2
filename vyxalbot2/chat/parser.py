@@ -2,6 +2,8 @@ from typing import Any, Callable
 from enum import Enum, auto
 from string import digits, ascii_letters
 
+from inspect import signature
+
 from sechat.room import Room
 from sechat.events import MessageEvent
 
@@ -155,18 +157,22 @@ class CommandParser:
             commandName += " " + i
         impl = self.commands[commandName]
         argValues = []
-        for paramName, paramType in impl.__annotations__.items():
-            paramType = TYPES_TO_TOKENS[paramType]
+        for paramName, param in signature(impl).parameters.items():
+            paramType = TYPES_TO_TOKENS[param.annotation]
             try:
                 argType, argValue = args.pop(0)
             except StopIteration:
-                raise ParseError(f"Expected a value for {paramName}")
-            if argType == TokenType.ERROR:
-                raise ParseError(str(argValue))
-            if argType == TokenType.FLAG:
-                argType = TokenType.STRING
-            if argType != paramType:
-                raise ParseError(f"Expected {paramType.name} for {paramName} but got {argType.name}")
-            argValues.append(argValue)
+                if param.default is param.empty:
+                    raise ParseError(f"Expected a value for {paramName}")
+                else:
+                    argValues.append(param.default)
+            else:
+                if argType == TokenType.ERROR:
+                    raise ParseError(str(argValue))
+                if argType == TokenType.FLAG:
+                    argType = TokenType.STRING
+                if argType != paramType:
+                    raise ParseError(f"Expected {paramType.name} for {paramName} but got {argType.name}")
+                argValues.append(argValue)
         return commandName, impl, argValues
         
