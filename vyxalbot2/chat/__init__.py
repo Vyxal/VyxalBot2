@@ -1,13 +1,15 @@
 from typing import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from string import ascii_letters
 
 import re
+import random
 
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
 
-from ..types import PublicConfigType
+from ..types import PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
 
@@ -17,10 +19,12 @@ class User:
     ident: int
 
 class Chat(Room):
-    def __init__(self, room: Room, userDB: UserDB, config: PublicConfigType):
+    def __init__(self, room: Room, userDB: UserDB, config: PublicConfigType, messages: MessagesType, statuses: list[str]):
         self.room = room
         self.userDB = userDB
         self.config = config
+        self.messages = messages
+        self.statuses = statuses
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b async for a, b in self.getCommands()}
         self.parser = CommandParser(self.commands)
@@ -86,3 +90,32 @@ class Chat(Room):
                     return
         async for l in impl(user, *args):
             yield l
+
+    async def dieCommand(self, user: User):
+        exit(-42)
+
+    async def helpCommand(self, user: User, command: str = ""):
+        if command:
+            if command == "me":
+                yield "I'd love to, but I don't have any limbs."
+            else:
+                if command in self.messages["commandhelp"]:
+                    yield self.messages["commandhelp"][command]
+                else:
+                    yield "No help is available for that command."
+        else:
+            yield self.messages["help"] + ", ".join(map(lambda i: i.split(" ")[0], self.commands.keys()))
+
+    async def infoCommand(self, user: User):
+        yield self.messages["info"]
+
+    async def _status(self):
+        pass
+
+    async def statusCommand(self, user: User):
+        status = random.choice(self.statuses)
+        if not status.endswith(".") and status.endswith(ascii_letters):
+            status += "."
+        else:
+            status = status.removesuffix(";")
+        yield status
