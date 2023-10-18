@@ -81,10 +81,12 @@ class VyxalBot2:
         )
         self.startupTime = datetime.now()
 
+        self.ghApp.on_shutdown.append(self.shutdown)
         return self.ghApp
 
+    async def shutdown(self, _):
         try:
-            await self.room.send("Ah'll be bahk.")
+            await self.room.send("Shutting down...")
         except RuntimeError:
             pass
         await wait_for(
