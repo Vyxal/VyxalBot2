@@ -7,6 +7,8 @@ import re
 import random
 import codecs
 
+from aiohttp import ClientSession
+from tinydb.table import Document
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
 from uwuivy import uwuipy
@@ -27,6 +29,9 @@ class Chat:
         self.config = config
         self.messages = messages
         self.statuses = statuses
+
+        self.session = ClientSession()
+
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b async for a, b in self.getCommands()}
         self.parser = CommandParser(self.commands)
@@ -152,3 +157,85 @@ class Chat:
 
     async def statusGoofyCommand(self, user: User):
         yield "\n".join(map(lambda line: line + "🤓" * random.randint(1, 3), self.status().splitlines()))
+
+    def getPermissionsTarget(self, sender: User, name: str) -> Document | str:
+        if name == "me":
+            target = self.userDB.getUserInfo(sender.ident)
+            if target is None:
+                return "You are not in my database. Please run !!/register."
+        else:
+            target = self.userDB.getUserInfoByName(name)
+            if target is None:
+                return "I don't know any user by that name."
+        return target
+
+    async def permissionsListCommand(self, user: User, name: str):
+        if isinstance(target := self.getPermissionsTarget(user, name), str):
+            yield target
+            return
+        yield f"User {target['name']} is a member of groups {', '.join(target['groups'])}."
+
+    def permissionsModify(self, user: User, name: str, group: str, grant: bool):
+        if isinstance(target := self.getPermissionsTarget(user, name), str):
+            yield target
+            return
+        sender = self.userDB.getUserInfo(user.ident)
+        if sender is None:
+            yield "You are not in my database. Please run !!/register."
+            return
+        group = group.removesuffix("s")
+        try:
+            promotionRequires = self.config["groups"][group].get("promotionRequires", [])
+        except KeyError:
+            yield "That group does not exist."
+            return
+        if (not any([i in promotionRequires for i in sender["groups"]])) and len(promotionRequires):
+            yield "Insufficient permissions."
+            return
+        if grant:
+            if self.userDB.addUserToGroup(target, group):
+                yield f"Added {target['name']} to {group}."
+            else:
+                yield f"{target['name']} is already a member of {group}."
+        else:
+            self.userDB.removeUserFromGroup(target, group)
+            yield f"{target['name']} removed from {group}."
+
+    async def permissionsGrantCommand(self, user: User, name: str, group: str):
+        for line in self.permissionsModify(user, name, group, True):
+            yield line
+    async def permissionsRevokeCommand(self, user: User, name: str, group: str):
+        for line in self.permissionsModify(user, name, group, False):
+            yield line
+
+    async def registerCommand(self, user: User):
+        if self.userDB.getUserInfo(user.ident):
+            yield "You are already registered. If your details are out of date, run !!/refresh."
+            return
+        self.userDB.addUserToDatabase(
+            await (
+                await self.session.get(
+                    f"https://chat.stackexchange.com/users/thumbs/{user.ident}"
+                )
+            ).json()
+        )
+        yield "You have been registered! You don't have any permisssions yet."
+
+    async def refreshCommand(self, user: User):
+        if self.userDB.getUserInfo(user.ident) is None:
+            yield "You are not in my database. Please run !!/register."
+            return
+        self.userDB.refreshUserData(
+            await (
+                await self.session.get(
+                    f"https://chat.stackexchange.com/users/thumbs/{user.ident}"
+                )
+            ).json()
+        )
+        yield "Your details have been updated."
+
+    async def groupsListCommand(self, user: User):
+        yield "All groups: " + ", ".join(self.config['groups'].keys())
+    async def groupsMembersCommand(self, user: User, group: str):
+        group = group.removesuffix("s")
+        yield f"Members of {group}: " + ', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(group)))

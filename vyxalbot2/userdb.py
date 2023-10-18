@@ -14,6 +14,9 @@ class UserDB:
     def getUserInfo(self, user: int) -> Optional[Document]:
         return r[0] if len(r := self._db.search(Query().chatID == user)) else None
 
+    def getUserInfoByName(self, name: str) -> Optional[Document]:
+        return r[0] if len(r := self._db.search(Query().name == name)) else None
+
     def addUserToDatabase(self, userData: dict):
         self._db.insert(
             {"chatID": userData["id"], "name": userData["name"], "groups": []}
