@@ -132,7 +132,7 @@ class CommandParser:
                             except IndexError:
                                 yield TokenType.ERROR, "Expected character to escape"
                                 return
-                        elif char == " ":
+                        elif char == ",":
                             stack.append([])
                             break
                         elif char == "`":
