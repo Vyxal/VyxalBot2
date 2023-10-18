@@ -15,6 +15,7 @@ import subprocess
 from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from aiohttp import ClientSession
+from sechat import EventType
 from tinydb.table import Document
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
@@ -51,6 +52,9 @@ class Chat:
         self.errorsSinceStartup = 0
         self.startupTime = datetime.now()
 
+        self.room.register(self.onMessage, EventType.MESSAGE)
+        self.room.register(self.onEdit, EventType.EDIT)
+
     def genCommands(self):
         for attrName in self.__dir__():
             attr = getattr(self, attrName)
@@ -82,7 +86,7 @@ class Chat:
                 help[name] = [message]
         return help
 
-    async def onMessage(self, message: MessageEvent):
+    async def onMessage(self, room: Room, message: MessageEvent):
         if message.user_id == self.room.userID:
             return
         if not message.content.startswith("!!/"):
@@ -94,17 +98,17 @@ class Chat:
             responseIDs.append(await self.room.send(line))
         self.editDB[message.message_id] = (sentAt, responseIDs)
 
-    async def onEdit(self, edit: EditEvent):
+    async def onEdit(self, room: Room, edit: EditEvent):
         if edit.user_id == self.room.userID:
             return
         if not edit.content.startswith("!!/"):
             return
         if edit.message_id not in self.editDB:
-            await self.onMessage(edit)
+            await self.onMessage(room, edit)
         else:
             sentAt, idents = self.editDB[edit.message_id]
             if (datetime.now() - sentAt).seconds > (60 * 2): # margin of error
-                await self.onMessage(edit)
+                await self.onMessage(room, edit)
                 return
             response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), EventInfo(edit.user_name, edit.user_id, edit.message_id))]
             response[0] += f":{edit.message_id} "
