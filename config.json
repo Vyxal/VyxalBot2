@@ -37,8 +37,8 @@
                 "good first issue": "PR: Light and Easy"
             },
             "prregex": {
-                "v2-.*": "PR: Version 2 Related",
-                "v3-.*": "PR: Version 3 Related"
+                "[vV]2-.*": "PR: Version 2 Related",
+                "[vV]3-.*": "PR: Version 3 Related"
             }
         }
     }
