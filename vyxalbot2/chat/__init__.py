@@ -1,4 +1,3 @@
-import json
 from time import time
 from typing import Callable
 from dataclasses import dataclass
@@ -9,6 +8,8 @@ import re
 import random
 import codecs
 import base64
+import json
+import subprocess
 
 from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
@@ -366,3 +367,10 @@ class Chat:
             },
             oauth_token="" # TODO,
         )
+
+    async def pullCommand(self, event: EventInfo):
+        if subprocess.run(["git", "pull"]).returncode == 0:
+            yield "Restarting..."
+            exit(-43)
+        else:
+            yield "Failed to pull!"
