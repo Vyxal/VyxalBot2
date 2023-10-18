@@ -16,6 +16,7 @@ from uwuivy import uwuipy
 from ..types import PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
+from ..util import RAPTOR
 
 @dataclass
 class User:
@@ -247,3 +248,18 @@ class Chat:
             yield "Nobody to ping."
         else:
             yield pings + " ^"
+
+    async def coffeeCommand(self, user: User, target: str = "me"):
+        if target == "me":
+            yield "☕"
+        else:
+            yield f"@{target} ☕"
+
+    async def maulCommand(self, user: User, target: str):
+        if target.lower().removesuffix("2") == "vyxalbot" or target == "me":
+            yield RAPTOR.format(user=user.name)
+        else:
+            yield RAPTOR.format(user=target)
+
+    async def hugCommand(self, user: User):
+        yield random.choice(self.messages["hugs"])
