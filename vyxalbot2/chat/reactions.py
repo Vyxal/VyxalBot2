@@ -11,7 +11,9 @@ from vyxalbot2.util import RAPTOR
 
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
+    (r"(!!/)?(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
+    (r"(make?|brew)( a cup of)? coffee for (?P<user>.+)", r"(make?|brew) (?P<user>me)h? a coffee",): "coffee",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
     (
         r"(.* |^)([Ww]ho(mst)?|[Ww]hat) (did|done) (that|this|it).*",
@@ -48,6 +50,12 @@ class Reactions:
     async def info(self, event: MessageEvent, reMatch: re.Match):
         await self.runCommand("info", event)
 
+    async def cookie(self, event: MessageEvent, reMatch: re.Match):
+        await self.runCommand("cookie", event)
+
+    async def coffee(self, event: MessageEvent, reMatch: re.Match):
+        await self.runCommand("coffee", event)
+
     async def maul(self, event: MessageEvent, reMatch: re.Match):
         await self.runCommand("maul", event, reMatch.group("user"))
 
@@ -62,5 +70,6 @@ class Reactions:
 
     async def hello(self, event: MessageEvent, reMatch: re.Match):
         await self.room.send(random.choice(self.messages["hello"]))
+
     async def goodbye(self, event: MessageEvent, reMatch: re.Match):
         await self.room.send(random.choice(self.messages["goodbye"]))
