@@ -163,8 +163,8 @@ class CommandParser:
                 if command.startswith(commandName.split(" ")[0]):
                     maybeYouMeant.append(command)
             if len(maybeYouMeant):
-                raise ParseError(f"Invalid command! Valid subcommands of {commandName.split(' ')[0]} are: " + ",".join(maybeYouMeant))
-            raise ParseError("Invalid command!") from None
+                raise ParseError(f"Unknown command. Valid subcommands of {commandName.split(' ')[0]} are: " + ",".join(maybeYouMeant))
+            raise ParseError("Unknown command.") from None
         argValues = []
         for paramName, param in signature(impl).parameters.items():
             if paramName in ("event", "self"):

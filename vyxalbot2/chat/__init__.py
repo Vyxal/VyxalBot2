@@ -21,6 +21,7 @@ from sechat.events import MessageEvent, EditEvent
 from uwuivy import uwuipy
 
 import yaml
+import logging
 
 from vyxalbot2.chat.reactions import Reactions
 from vyxalbot2.types import EventInfo
@@ -41,6 +42,7 @@ class Chat:
         self.gh = gh
         self.session = session
 
+        self.logger = logging.getLogger("Chat")
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b for a, b in self.genCommands()}
         self.commandHelp = self.genCommandHelp()
@@ -124,20 +126,24 @@ class Chat:
         try:
             commandName, impl, args = self.parser.parseCommand(message)
         except ParseError as e:
-            yield e.message
+            yield "Command error: " + e.message
             return
         userInfo = self.userDB.getUserInfo(event.userIdent)
         for groupName, group in self.publicConfig["groups"].items():
             if commandName in group.get("canRun", []):
                 if userInfo is not None:
                     if groupName not in userInfo["groups"]:
-                        yield f"Only members of group {groupName} can run !!/{commandName}"
+                        yield f"Only members of group {groupName} can run !!/{commandName}."
                         return
                 else:
-                    yield f"Only members of group {groupName} can run !!/{commandName}"
+                    yield f"Only members of group {groupName} can run !!/{commandName}."
                     return
-        async for l in impl(event, *args):
-            yield l
+        try:
+            async for l in impl(event, *args):
+                yield l
+        except Exception as e:
+            yield f"@Ginger An exception occured whilst processing this message!"
+            self.logger.exception(f"An exception occured whilst processing message {event.messageIdent}:")
 
     async def dieCommand(self, event: EventInfo):
         exit(-42)
