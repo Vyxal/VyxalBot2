@@ -8,6 +8,7 @@ import re
 import random
 import codecs
 
+from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from aiohttp import ClientSession
 from tinydb.table import Document
@@ -274,6 +275,9 @@ class Chat:
     async def amilyxalCommand(self, event: EventInfo):
         yield f"You are {'' if (event.userIdent == 354515) != (random.random() <= 0.1) else 'not '}lyxal."
 
+    async def blameCommand(self, event: EventInfo):
+        yield f"It was {random.choice(self.userDB.users())['name']}'s fault!",
+
     async def issueOpenCommand(self, user: EventInfo, repo: str, title: str, body: str, tags: list[str] = []):
         tagSet = set(tags)
         if repo in self.publicConfig["requiredLabels"]:
@@ -303,3 +307,22 @@ class Chat:
             oauth_token = "" # TODO
         )
 
+    async def prodCommand(self, event: EventInfo, repo: str):
+        if repo not in self.publicConfig["production"]:
+            yield "Repository not configured."
+            return
+        try:
+            await self.gh.post(
+                f"/repos/{self.privateConfig['account']}/{repo}/pulls",
+                data={
+                    "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
+                    "head": self.publicConfig["production"][repo]["head"],
+                    "base": self.publicConfig["production"][repo]["base"],
+                    "body": f"Requested by {event.userName} [here]({f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'}.",
+                },
+                oauth_token="" # TODO
+            )
+        except ValidationError as e:
+            yield f"Unable to open PR: {e}"
+        except GitHubHTTPException as e:
+            yield f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
