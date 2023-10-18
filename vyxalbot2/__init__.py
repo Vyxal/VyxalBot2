@@ -60,22 +60,20 @@ class VyxalBot2:
         self.statuses = list(filter(lambda i: hash(i) != -327901152, statuses))
         self.userDB = UserDB(storagePath, publicConfig["groups"])
 
-        self.bot = Bot(logger=self.logger)
-        self.session = ClientSession()
-
         with open(privateConfig["pem"], "r") as f:
-            privkey = f.read()
-
-        self.ghApp = GitHubApplication(self.room, self.publicConfig, privkey, self.privateConfig["appID"], self.privateConfig["account"], self.session, self.privateConfig["webhookSecret"])
+            self.privkey = f.read()
 
     async def run(self):
+        self.bot = Bot(logger=self.logger)
         await self.bot.authenticate(
             self.privateConfig["chat"]["email"],
             self.privateConfig["chat"]["password"],
             self.privateConfig["chat"]["host"],
         )
+        self.session = ClientSession()
         self.room = await self.bot.joinRoom(self.privateConfig["chat"]["room"])
-        self.chat = Chat(self.room, self.userDB, self.ghApp.gh, self.publicConfig, self.privateConfig, self.messages, self.statuses)
+        self.ghApp = GitHubApplication(self.room, self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.session, self.privateConfig["webhookSecret"])
+        self.chat = Chat(self.room, self.userDB, self.ghApp.gh, self.session, self.publicConfig, self.privateConfig, self.messages, self.statuses)
         await self.room.send(
             "Well, here we are again."
             if random.random() > 0.01
@@ -83,7 +81,7 @@ class VyxalBot2:
         )
         self.startupTime = datetime.now()
 
-        run_app(self.ghApp, port=self.privateConfig["port"])
+        return self.ghApp
 
         try:
             await self.room.send("Ah'll be bahk.")
@@ -126,4 +124,4 @@ def run():
         str(STORAGE_PATH / "storage.json"),
         statuses,
     )
-    asyncio.run(app.run())
+    run_app(app.run(), port=privateConfig["port"])

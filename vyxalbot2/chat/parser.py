@@ -152,10 +152,19 @@ class CommandParser:
         if ty != TokenType.FLAG:
             raise ParseError(f"Expected command name, got {ty.name}")
         assert isinstance(commandName, str)
-        while args[0][0] == TokenType.FLAG:
+        while len(args) and args[0][0] == TokenType.FLAG:
             assert isinstance((i := args.pop(0)[1]), str)
             commandName += " " + i
-        impl = self.commands[commandName]
+        try:
+            impl = self.commands[commandName]
+        except KeyError:
+            maybeYouMeant = []
+            for command in self.commands.keys():
+                if command.startswith(commandName.split(" ")[0]):
+                    maybeYouMeant.append(command)
+            if len(maybeYouMeant):
+                raise ParseError(f"Invalid command! Valid subcommands of {commandName.split(' ')[0]} are: " + ",".join(maybeYouMeant))
+            raise ParseError("Invalid command!") from None
         argValues = []
         for paramName, param in signature(impl).parameters.items():
             if paramName in ("event", "self"):
@@ -163,7 +172,7 @@ class CommandParser:
             paramType = TYPES_TO_TOKENS[param.annotation]
             try:
                 argType, argValue = args.pop(0)
-            except StopIteration:
+            except IndexError:
                 if param.default is param.empty:
                     raise ParseError(f"Expected a value for {paramName}")
                 else:

@@ -1,7 +1,6 @@
 import inspect
 from time import time
 from typing import Callable
-from dataclasses import dataclass
 from datetime import datetime
 from string import ascii_letters
 
@@ -24,20 +23,15 @@ from uwuivy import uwuipy
 import yaml
 
 from vyxalbot2.chat.reactions import Reactions
+from vyxalbot2.types import EventInfo
 
 from ..types import AppToken, PrivateConfigType, PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
 from ..util import RAPTOR
 
-@dataclass
-class EventInfo:
-    userName: str
-    userIdent: int
-    messageIdent: int
-
 class Chat:
-    def __init__(self, room: Room, userDB: UserDB, gh: AsyncioGitHubAPI, publicConfig: PublicConfigType, privateConfig: PrivateConfigType, messages: MessagesType, statuses: list[str]):
+    def __init__(self, room: Room, userDB: UserDB, gh: AsyncioGitHubAPI, session: ClientSession, publicConfig: PublicConfigType, privateConfig: PrivateConfigType, messages: MessagesType, statuses: list[str]):
         self.room = room
         self.userDB = userDB
         self.publicConfig = publicConfig
@@ -45,7 +39,7 @@ class Chat:
         self.messages = messages
         self.statuses = statuses
         self.gh = gh
-        self.session = gh._session
+        self.session = session
 
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b for a, b in self.genCommands()}
@@ -65,7 +59,7 @@ class Chat:
                 continue
             if not attr.__name__.lower().endswith("command"):
                 continue
-            yield re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__), attr
+            yield re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__.removesuffix("Command")), attr
 
     def genCommandHelp(self):
         help: dict[str, list[str]] = {}
@@ -79,10 +73,10 @@ class Chat:
                 if parameter.name in ("event", "self"):
                     continue
                 if parameter.default is not parameter.empty:
-                    parameters.append(f"[{parameter.name}: {parameter.annotation}]")
+                    parameters.append(f"[{parameter.name}: {parameter.annotation.__name__}]")
                 else:
-                    parameters.append(f"{parameter.name}: {parameter.annotation}")
-            message = f"`!!/{fullName} " + ", ".join(parameters) + "`: " + impl.__doc__
+                    parameters.append(f"<{parameter.name}: {parameter.annotation.__name__}>")
+            message = (f"`!!/{fullName} " + ", ".join(parameters)).strip() + "`: " + impl.__doc__
             if name in help:
                 help[name].append(message)
             else:
@@ -114,7 +108,7 @@ class Chat:
                 await self.onMessage(room, edit)
                 return
             response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), EventInfo(edit.user_name, edit.user_id, edit.message_id))]
-            response[0] += f":{edit.message_id} "
+            response[0] = f":{edit.message_id} " + response[0]
             for x in range(min(len(idents), len(response))):
                 await self.room.edit(idents.pop(0), response.pop(0))
             for leftover in response:
@@ -122,6 +116,9 @@ class Chat:
             for leftover in idents:
                 await self.room.delete(leftover)
             self.editDB.pop(edit.message_id)
+        for key, value in self.editDB.copy().items():
+            if (datetime.now() - value[0]).seconds > (60 * 2):
+                self.editDB.pop(key)
 
     async def processMessage(self, message: str, event: EventInfo):
         try:
@@ -157,7 +154,7 @@ class Chat:
                 else:
                     yield "No help is available for that command."
         else:
-            yield self.messages["help"] + ", ".join(map(lambda i: i.split(" ")[0], self.commands.keys()))
+            yield self.messages["help"] + ", ".join(sorted(set(map(lambda i: i.split(" ")[0], self.commands.keys()))))
 
     async def infoCommand(self, event: EventInfo):
         yield self.messages["info"]

@@ -64,3 +64,10 @@ class MessagesType(TypedDict):
 class AppToken:
     token: str
     expires: datetime
+
+
+@dataclass
+class EventInfo:
+    userName: str
+    userIdent: int
+    messageIdent: int

@@ -1,11 +1,14 @@
 import random
+import typing
 import re
 
 from itertools import chain, repeat
 
 from sechat import EventType, MessageEvent, Room
 
-from vyxalbot2.chat import Chat, EventInfo
+if typing.TYPE_CHECKING:
+    from vyxalbot2.chat import Chat
+from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
 from vyxalbot2.util import RAPTOR
 
@@ -30,7 +33,7 @@ MESSAGE_REGEXES: dict[str, str] = dict(
 )
 
 class Reactions:
-    def __init__(self, room: Room, chat: Chat, messages: MessagesType):
+    def __init__(self, room: Room, chat: "Chat", messages: MessagesType):
         self.room = room
         self.chat = chat
         self.messages = messages

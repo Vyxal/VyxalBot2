@@ -18,13 +18,14 @@ from .formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
-    async def wrapper(self: GitHubApplication, event: GitHubEvent, gh: AsyncioGitHubAPI):
+    async def wrapper(self: "GitHubApplication", event: GitHubEvent, gh: AsyncioGitHubAPI):
         async for line in fun(event):
             await self.room.send(line)
     return wrapper
 
 class GitHubApplication(Application):
     def __init__(self, room: Room, publicConfig: PublicConfigType, privkey: str, appId: str, account: str, session: ClientSession, webhookSecret: str):
+        super().__init__()
         self.room = room
         self.privkey = privkey
         self.appId = appId
