@@ -92,7 +92,6 @@ class VyxalBot2:
         )  # DO NOT TRY THIS AT HOME
         await wait_for(self.session.close(), 3)
 
-
 def run():
     PUBLIC_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PUBLIC", "config.json")
     PRIVATE_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PRIVATE", "private.json")
