@@ -23,6 +23,8 @@ from uwuivy import uwuipy
 
 import yaml
 
+from vyxalbot2.chat.reactions import Reactions
+
 from ..types import AppToken, PrivateConfigType, PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
@@ -54,6 +56,7 @@ class Chat:
 
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.room.register(self.onEdit, EventType.EDIT)
+        Reactions(room, self, messages)
 
     def genCommands(self):
         for attrName in self.__dir__():
