@@ -1,10 +1,12 @@
 #:schema https://json.schemastore.org/base.json
 
 help = '''
-I'm Vyxal Bot {version} made by Ginger and Vyxal Corp.
+I'm Vyxal Bot 2, written by Ginger on behalf of Vyxal Corp.
 All of my commands start with !!/
-If you want help for a specific command, do !!/help <command name>.
+If you want help for a specific command, run !!/help "<command name>".
 New to Vyxal? Try !!/info for more information.
+
+Note: As of the 2.5 rewrite, command syntax has changed significantly. Run !!/help "syntax" for more info.
 
 Command list: '''
 info = """[GitHub Repository](https://github.com/Vyxal/Vyxal/) | \
@@ -14,6 +16,15 @@ info = """[GitHub Repository](https://github.com/Vyxal/Vyxal/) | \
     [List of elements](https://github.com/Vyxal/Vyxal/blob/main/documents/knowledge/elements.md) | \
     [GitHub Organization](https://github.com/Vyxal/)\
     """
+
+syntaxhelp = '''
+The 2.5 Mega Refactoring™ includes a new command parser, rewritten from the ground up to make command syntax more homogeneous and provide more verbose error messages.
+New commands can have arguments of 3 datatypes: strings, numbers, and lists of strings. The syntax for these types is as follows:
+Strings: "content"
+Numbers: <normal numbers, nothing's changed here>
+Strarrays: `item,item,item`
+The help for commands is now automatically generated, and comes with annotations so you can easily figure out what type an argument has.
+'''
 
 hugs = [
     "⊂((・▽・))⊃",
@@ -27,10 +38,12 @@ hugs = [
 hello = [
     "hello!",
     "hi!",
-    "greetings"
+    "greetings",
+    "good day",
+    "\\o"
 ]
 goodbye = [
-    "\\o",
+    "o/",
     "bye!",
-    "adios"
+    "adios",
 ]

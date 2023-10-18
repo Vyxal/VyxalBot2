@@ -153,6 +153,8 @@ class Chat:
         if command:
             if command == "me":
                 yield "I'd love to, but I don't have any limbs."
+            elif command == "syntax":
+                yield self.messages["syntaxhelp"]
             else:
                 if command in self.commandHelp:
                     for line in self.commandHelp[command]:

@@ -54,6 +54,7 @@ class PublicConfigType(TypedDict):
 class MessagesType(TypedDict):
     help: str
     info: str
+    syntaxhelp: str
     hello: str
     goodbye: str
     hugs: list[str]
