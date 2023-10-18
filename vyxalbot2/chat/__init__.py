@@ -268,6 +268,12 @@ class Chat:
     async def hugCommand(self, user: EventInfo):
         yield random.choice(self.messages["hugs"])
 
+    async def susCommand(self, event: EventInfo):
+        yield "ඞ" * random.randint(8, 64)
+
+    async def amilyxalCommand(self, event: EventInfo):
+        yield f"You are {'' if (event.userIdent == 354515) != (random.random() <= 0.1) else 'not '}lyxal."
+
     async def issueOpenCommand(self, user: EventInfo, repo: str, title: str, body: str, tags: list[str] = []):
         tagSet = set(tags)
         if repo in self.publicConfig["requiredLabels"]:
@@ -296,3 +302,4 @@ class Chat:
             },
             oauth_token = "" # TODO
         )
+
