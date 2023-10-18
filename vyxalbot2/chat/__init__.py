@@ -1,3 +1,4 @@
+import json
 from time import time
 from typing import Callable
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from string import ascii_letters
 import re
 import random
 import codecs
+import base64
 
 from gidgethub import HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
@@ -15,6 +17,8 @@ from tinydb.table import Document
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
 from uwuivy import uwuipy
+
+import yaml
 
 from ..types import AppToken, PrivateConfigType, PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
@@ -326,3 +330,39 @@ class Chat:
             yield f"Unable to open PR: {e}"
         except GitHubHTTPException as e:
             yield f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
+
+    async def idiomAddCommand(self, event: EventInfo, title: str, code: str, description: str, keywords: list[str] = []):
+        file = await self.gh.getitem(
+            f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+            oauth_token="" # TODO
+        )
+        idioms = yaml.safe_load(base64.b64decode(file["content"]))
+        if not idioms:
+            idioms = []
+        idioms.append(
+            {
+                "name": title,
+                "code": code,
+                "description": description,
+                "link": "#"
+                + base64.b64encode(
+                    json.dumps(["", "", "", code, ""]).encode(
+                        "utf-8"
+                    )
+                ).decode("utf-8"),
+                "keywords": keywords,
+            }
+        )
+        await self.gh.put(
+            f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
+            data={
+                "message": f"Added \"{title}\" to the idiom list.\nRequested by {event.userName} here: {f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'}",
+                "content": base64.b64encode(
+                    yaml.dump(
+                        idioms, encoding="utf-8", allow_unicode=True
+                    )
+                ).decode("utf-8"),
+                "sha": file["sha"],
+            },
+            oauth_token="" # TODO,
+        )
