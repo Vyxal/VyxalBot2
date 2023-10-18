@@ -5,9 +5,11 @@ from string import ascii_letters
 
 import re
 import random
+import codecs
 
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
+from uwuivy import uwuipy
 
 from ..types import PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
@@ -18,7 +20,7 @@ class User:
     name: str
     ident: int
 
-class Chat(Room):
+class Chat:
     def __init__(self, room: Room, userDB: UserDB, config: PublicConfigType, messages: MessagesType, statuses: list[str]):
         self.room = room
         self.userDB = userDB
@@ -28,6 +30,8 @@ class Chat(Room):
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.commands: dict[str, Callable] = {a: b async for a, b in self.getCommands()}
         self.parser = CommandParser(self.commands)
+        self.errorsSinceStartup = 0
+        self.startupTime = datetime.now()
 
     async def getCommands(self):
         for attrName in self.__dir__():
@@ -109,8 +113,13 @@ class Chat(Room):
     async def infoCommand(self, user: User):
         yield self.messages["info"]
 
-    async def _status(self):
-        pass
+    def status(self):
+        return (
+            f"Bot status: Online\n"
+            f"Uptime: {datetime.now() - self.startupTime}\n"
+            f"Running since: {self.startupTime.isoformat()}\n"
+            f"Errors since startup: {self.errorsSinceStartup}"
+        )
 
     async def statusCommand(self, user: User):
         status = random.choice(self.statuses)
@@ -119,3 +128,27 @@ class Chat(Room):
         else:
             status = status.removesuffix(";")
         yield status
+
+    async def statusBoringCommand(self, user: User):
+        yield self.status()
+    
+    async def statusExcitingCommand(self, user: User):
+        yield "\n".join(map(lambda line: line + ("!" * random.randint(2, 5)), self.status().upper().splitlines()))
+
+    async def statusTinglyCommand(self, user: User):
+        uwu = uwuipy(None, 0.3, 0.2, 0.2, 1)  # type: ignore Me when the developers of uwuipy don't annotate their types correctly
+        yield uwu.uwuify(self.status())
+
+    async def statusSleepyCommand(self, user: User):
+        status = self.status()
+        yield (
+            "\n".join(status.splitlines())[:random.randint(1, len(status.splitlines()))]
+            + " *yawn*\n"
+            + "z" * random.randint(5, 10)
+        )
+
+    async def statusCrypticCommand(self, user: User):
+        yield codecs.encode(self.status(), "rot13")
+
+    async def statusGoofyCommand(self, user: User):
+        yield "\n".join(map(lambda line: line + "🤓" * random.randint(1, 3), self.status().splitlines()))
