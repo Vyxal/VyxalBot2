@@ -239,3 +239,11 @@ class Chat:
     async def groupsMembersCommand(self, user: User, group: str):
         group = group.removesuffix("s")
         yield f"Members of {group}: " + ', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(group)))
+
+    async def pingCommand(self, user: User, group: str, message: str):
+        group = group.removesuffix("s")
+        pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["id"] != user.ident])
+        if not len(pings):
+            yield "Nobody to ping."
+        else:
+            yield pings + " ^"
