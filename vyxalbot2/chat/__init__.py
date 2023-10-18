@@ -86,13 +86,13 @@ class Chat:
                 await self.room.delete(leftover)
             self.editDB.pop(edit.message_id)
 
-    async def processMessage(self, message: str, user: EventInfo):
+    async def processMessage(self, message: str, event: EventInfo):
         try:
             commandName, impl, args = self.parser.parseCommand(message)
         except ParseError as e:
             yield e.message
             return
-        userInfo = self.userDB.getUserInfo(user.userIdent)
+        userInfo = self.userDB.getUserInfo(event.userIdent)
         for groupName, group in self.publicConfig["groups"].items():
             if commandName in group.get("canRun", []):
                 if userInfo is not None:
@@ -102,13 +102,13 @@ class Chat:
                 else:
                     yield f"Only members of group {groupName} can run !!/{commandName}"
                     return
-        async for l in impl(user, *args):
+        async for l in impl(event, *args):
             yield l
 
-    async def dieCommand(self, user: EventInfo):
+    async def dieCommand(self, event: EventInfo):
         exit(-42)
 
-    async def helpCommand(self, user: EventInfo, command: str = ""):
+    async def helpCommand(self, event: EventInfo, command: str = ""):
         if command:
             if command == "me":
                 yield "I'd love to, but I don't have any limbs."
@@ -120,7 +120,7 @@ class Chat:
         else:
             yield self.messages["help"] + ", ".join(map(lambda i: i.split(" ")[0], self.commands.keys()))
 
-    async def infoCommand(self, user: EventInfo):
+    async def infoCommand(self, event: EventInfo):
         yield self.messages["info"]
 
     def status(self):
@@ -131,7 +131,7 @@ class Chat:
             f"Errors since startup: {self.errorsSinceStartup}"
         )
 
-    async def statusCommand(self, user: EventInfo):
+    async def statusCommand(self, event: EventInfo):
         status = random.choice(self.statuses)
         if not status.endswith(".") and status.endswith(ascii_letters):
             status += "."
@@ -139,17 +139,17 @@ class Chat:
             status = status.removesuffix(";")
         yield status
 
-    async def statusBoringCommand(self, user: EventInfo):
+    async def statusBoringCommand(self, event: EventInfo):
         yield self.status()
     
-    async def statusExcitingCommand(self, user: EventInfo):
+    async def statusExcitingCommand(self, event: EventInfo):
         yield "\n".join(map(lambda line: line + ("!" * random.randint(2, 5)), self.status().upper().splitlines()))
 
-    async def statusTinglyCommand(self, user: EventInfo):
+    async def statusTinglyCommand(self, event: EventInfo):
         uwu = uwuipy(None, 0.3, 0.2, 0.2, 1)  # type: ignore Me when the developers of uwuipy don't annotate their types correctly
         yield uwu.uwuify(self.status())
 
-    async def statusSleepyCommand(self, user: EventInfo):
+    async def statusSleepyCommand(self, event: EventInfo):
         status = self.status()
         yield (
             "\n".join(status.splitlines())[:random.randint(1, len(status.splitlines()))]
@@ -157,15 +157,15 @@ class Chat:
             + "z" * random.randint(5, 10)
         )
 
-    async def statusCrypticCommand(self, user: EventInfo):
+    async def statusCrypticCommand(self, event: EventInfo):
         yield codecs.encode(self.status(), "rot13")
 
-    async def statusGoofyCommand(self, user: EventInfo):
+    async def statusGoofyCommand(self, event: EventInfo):
         yield "\n".join(map(lambda line: line + "🤓" * random.randint(1, 3), self.status().splitlines()))
 
-    def getPermissionsTarget(self, sender: EventInfo, name: str) -> Document | str:
+    def getPermissionsTarget(self, event: EventInfo, name: str) -> Document | str:
         if name == "me":
-            target = self.userDB.getUserInfo(sender.userIdent)
+            target = self.userDB.getUserInfo(event.userIdent)
             if target is None:
                 return "You are not in my database. Please run !!/register."
         else:
@@ -174,17 +174,17 @@ class Chat:
                 return "I don't know any user by that name."
         return target
 
-    async def permissionsListCommand(self, user: EventInfo, name: str):
-        if isinstance(target := self.getPermissionsTarget(user, name), str):
+    async def permissionsListCommand(self, event: EventInfo, name: str):
+        if isinstance(target := self.getPermissionsTarget(event, name), str):
             yield target
             return
         yield f"User {target['name']} is a member of groups {', '.join(target['groups'])}."
 
-    def permissionsModify(self, user: EventInfo, name: str, group: str, grant: bool):
-        if isinstance(target := self.getPermissionsTarget(user, name), str):
+    def permissionsModify(self, event: EventInfo, name: str, group: str, grant: bool):
+        if isinstance(target := self.getPermissionsTarget(event, name), str):
             yield target
             return
-        sender = self.userDB.getUserInfo(user.userIdent)
+        sender = self.userDB.getUserInfo(event.userIdent)
         if sender is None:
             yield "You are not in my database. Please run !!/register."
             return
@@ -206,66 +206,66 @@ class Chat:
             self.userDB.removeUserFromGroup(target, group)
             yield f"{target['name']} removed from {group}."
 
-    async def permissionsGrantCommand(self, user: EventInfo, name: str, group: str):
-        for line in self.permissionsModify(user, name, group, True):
+    async def permissionsGrantCommand(self, event: EventInfo, name: str, group: str):
+        for line in self.permissionsModify(event, name, group, True):
             yield line
-    async def permissionsRevokeCommand(self, user: EventInfo, name: str, group: str):
-        for line in self.permissionsModify(user, name, group, False):
+    async def permissionsRevokeCommand(self, event: EventInfo, name: str, group: str):
+        for line in self.permissionsModify(event, name, group, False):
             yield line
 
-    async def registerCommand(self, user: EventInfo):
-        if self.userDB.getUserInfo(user.userIdent):
+    async def registerCommand(self, event: EventInfo):
+        if self.userDB.getUserInfo(event.userIdent):
             yield "You are already registered. If your details are out of date, run !!/refresh."
             return
         self.userDB.addUserToDatabase(
             await (
                 await self.session.get(
-                    f"https://chat.stackexchange.com/users/thumbs/{user.userIdent}"
+                    f"https://chat.stackexchange.com/users/thumbs/{event.userIdent}"
                 )
             ).json()
         )
         yield "You have been registered! You don't have any permisssions yet."
 
-    async def refreshCommand(self, user: EventInfo):
-        if self.userDB.getUserInfo(user.userIdent) is None:
+    async def refreshCommand(self, event: EventInfo):
+        if self.userDB.getUserInfo(event.userIdent) is None:
             yield "You are not in my database. Please run !!/register."
             return
         self.userDB.refreshUserData(
             await (
                 await self.session.get(
-                    f"https://chat.stackexchange.com/users/thumbs/{user.userIdent}"
+                    f"https://chat.stackexchange.com/users/thumbs/{event.userIdent}"
                 )
             ).json()
         )
         yield "Your details have been updated."
 
-    async def groupsListCommand(self, user: EventInfo):
+    async def groupsListCommand(self, event: EventInfo):
         yield "All groups: " + ", ".join(self.publicConfig['groups'].keys())
-    async def groupsMembersCommand(self, user: EventInfo, group: str):
+    async def groupsMembersCommand(self, event: EventInfo, group: str):
         group = group.removesuffix("s")
         yield f"Members of {group}: " + ', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(group)))
 
-    async def pingCommand(self, user: EventInfo, group: str, message: str):
+    async def pingCommand(self, event: EventInfo, group: str, message: str):
         group = group.removesuffix("s")
-        pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["id"] != user.userIdent])
+        pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["id"] != event.userIdent])
         if not len(pings):
             yield "Nobody to ping."
         else:
             yield pings + " ^"
 
-    async def coffeeCommand(self, user: EventInfo, target: str = "me"):
+    async def coffeeCommand(self, event: EventInfo, target: str = "me"):
         if target == "me":
             yield "☕"
         else:
             yield f"@{target} ☕"
 
-    async def maulCommand(self, user: EventInfo, target: str):
+    async def maulCommand(self, event: EventInfo, target: str):
         if target.lower().removesuffix("2") == "vyxalbot" or target == "me":
-            yield RAPTOR.format(user=user.userName)
+            yield RAPTOR.format(user=event.userName)
         else:
             yield RAPTOR.format(user=target)
 
-    async def hugCommand(self, user: EventInfo):
+    async def hugCommand(self, event: EventInfo):
         yield random.choice(self.messages["hugs"])
 
     async def susCommand(self, event: EventInfo):
