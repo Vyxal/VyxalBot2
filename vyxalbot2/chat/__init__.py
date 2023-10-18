@@ -1,3 +1,4 @@
+import inspect
 from time import time
 from typing import Callable
 from dataclasses import dataclass
@@ -44,12 +45,13 @@ class Chat:
         self.session = gh._session
 
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
-        self.commands: dict[str, Callable] = {a: b for a, b in self.getCommands()}
+        self.commands: dict[str, Callable] = {a: b for a, b in self.genCommands()}
+        self.commandHelp = self.genCommandHelp()
         self.parser = CommandParser(self.commands)
         self.errorsSinceStartup = 0
         self.startupTime = datetime.now()
 
-    def getCommands(self):
+    def genCommands(self):
         for attrName in self.__dir__():
             attr = getattr(self, attrName)
             if not callable(attr):
@@ -57,6 +59,28 @@ class Chat:
             if not attr.__name__.lower().endswith("command"):
                 continue
             yield re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__), attr
+
+    def genCommandHelp(self):
+        help: dict[str, list[str]] = {}
+        for fullName, impl in self.commands.items():
+            if impl.__doc__ is None:
+                continue
+            name = fullName.split(" ")[0]
+            signature = inspect.signature(impl)
+            parameters = []
+            for parameter in signature.parameters.values():
+                if parameter.name in ("event", "self"):
+                    continue
+                if parameter.default is not parameter.empty:
+                    parameters.append(f"[{parameter.name}: {parameter.annotation}]")
+                else:
+                    parameters.append(f"{parameter.name}: {parameter.annotation}")
+            message = f"`!!/{fullName} " + ", ".join(parameters) + "`: " + impl.__doc__
+            if name in help:
+                help[name].append(message)
+            else:
+                help[name] = [message]
+        return help
 
     async def onMessage(self, message: MessageEvent):
         if message.user_id == self.room.userID:
@@ -115,12 +139,14 @@ class Chat:
         exit(-42)
 
     async def helpCommand(self, event: EventInfo, command: str = ""):
+        """Provide help for a command."""
         if command:
             if command == "me":
                 yield "I'd love to, but I don't have any limbs."
             else:
-                if command in self.messages["commandhelp"]:
-                    yield self.messages["commandhelp"][command]
+                if command in self.commandHelp:
+                    for line in self.commandHelp[command]:
+                        yield line
                 else:
                     yield "No help is available for that command."
         else:
@@ -138,6 +164,7 @@ class Chat:
         )
 
     async def statusCommand(self, event: EventInfo):
+        """I will tell you what I'm doing (maybe)."""
         status = random.choice(self.statuses)
         if not status.endswith(".") and status.endswith(ascii_letters):
             status += "."
@@ -146,6 +173,7 @@ class Chat:
         yield status
 
     async def statusBoringCommand(self, event: EventInfo):
+        """Get actual status information about the bot."""
         yield self.status()
     
     async def statusExcitingCommand(self, event: EventInfo):
@@ -181,6 +209,7 @@ class Chat:
         return target
 
     async def permissionsListCommand(self, event: EventInfo, name: str):
+        """List the groups a user is member of."""
         if isinstance(target := self.getPermissionsTarget(event, name), str):
             yield target
             return
@@ -213,13 +242,16 @@ class Chat:
             yield f"{target['name']} removed from {group}."
 
     async def permissionsGrantCommand(self, event: EventInfo, name: str, group: str):
+        """Add a user to a group."""
         for line in self.permissionsModify(event, name, group, True):
             yield line
     async def permissionsRevokeCommand(self, event: EventInfo, name: str, group: str):
+        """Remove a user from a group."""
         for line in self.permissionsModify(event, name, group, False):
             yield line
 
     async def registerCommand(self, event: EventInfo):
+        """Register yourself to the bot."""
         if self.userDB.getUserInfo(event.userIdent):
             yield "You are already registered. If your details are out of date, run !!/refresh."
             return
@@ -233,6 +265,7 @@ class Chat:
         yield "You have been registered! You don't have any permisssions yet."
 
     async def refreshCommand(self, event: EventInfo):
+        """Refresh your user information."""
         if self.userDB.getUserInfo(event.userIdent) is None:
             yield "You are not in my database. Please run !!/register."
             return
@@ -246,12 +279,15 @@ class Chat:
         yield "Your details have been updated."
 
     async def groupsListCommand(self, event: EventInfo):
+        """List all groups known to the bot."""
         yield "All groups: " + ", ".join(self.publicConfig['groups'].keys())
     async def groupsMembersCommand(self, event: EventInfo, group: str):
+        """List all members of a group."""
         group = group.removesuffix("s")
         yield f"Members of {group}: " + ', '.join(map(lambda i: i['name'], self.userDB.membersOfGroup(group)))
 
     async def pingCommand(self, event: EventInfo, group: str, message: str):
+        """Ping all members of a group. Use with care!"""
         group = group.removesuffix("s")
         pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["id"] != event.userIdent])
         if not len(pings):
@@ -260,30 +296,46 @@ class Chat:
             yield pings + " ^"
 
     async def coffeeCommand(self, event: EventInfo, target: str = "me"):
+        """Brew some coffee."""
         if target == "me":
             yield "☕"
         else:
             yield f"@{target} ☕"
 
     async def maulCommand(self, event: EventInfo, target: str):
+        """Summon the raptors."""
         if target.lower().removesuffix("2") == "vyxalbot" or target == "me":
             yield RAPTOR.format(user=event.userName)
         else:
             yield RAPTOR.format(user=target)
 
     async def hugCommand(self, event: EventInfo):
+        """<3"""
         yield random.choice(self.messages["hugs"])
 
     async def susCommand(self, event: EventInfo):
+        """STOP POSTING ABOUT AMONG US"""
         yield "ඞ" * random.randint(8, 64)
 
     async def amilyxalCommand(self, event: EventInfo):
         yield f"You are {'' if (event.userIdent == 354515) != (random.random() <= 0.1) else 'not '}lyxal."
 
     async def blameCommand(self, event: EventInfo):
-        yield f"It was {random.choice(self.userDB.users())['name']}'s fault!",
+        yield f"It was {random.choice(self.userDB.users())['name']}'s fault!"
+
+    async def cookieCommand(self, event: EventInfo):
+        """Bake a cookie. Maybe. You have to be worthy."""
+        if info := self.userDB.getUserInfo(event.userIdent):
+            if "admin" in info["groups"]:
+                yield "Here you go: 🍪"
+        else:
+            if random.random() <= 0.75:
+                yield "Here you go: 🍪"
+            else:
+                yield "No."
 
     async def issueOpenCommand(self, user: EventInfo, repo: str, title: str, body: str, tags: list[str] = []):
+        """Open an issue in a repository."""
         tagSet = set(tags)
         if repo in self.publicConfig["requiredLabels"]:
             requiredLabels = self.publicConfig["requiredLabels"][repo]
@@ -313,6 +365,7 @@ class Chat:
         )
 
     async def prodCommand(self, event: EventInfo, repo: str):
+        """Open a PR to update production."""
         if repo not in self.publicConfig["production"]:
             yield "Repository not configured."
             return
@@ -333,6 +386,7 @@ class Chat:
             yield f"Failed to create issue: {e.status_code.value} {e.status_code.description}",
 
     async def idiomAddCommand(self, event: EventInfo, title: str, code: str, description: str, keywords: list[str] = []):
+        """Add an idiom to the idiom list."""
         file = await self.gh.getitem(
             f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
             oauth_token="" # TODO
@@ -369,6 +423,7 @@ class Chat:
         )
 
     async def pullCommand(self, event: EventInfo):
+        """Pull changes and restart."""
         if subprocess.run(["git", "pull"]).returncode == 0:
             yield "Restarting..."
             exit(-43)

@@ -158,6 +158,8 @@ class CommandParser:
         impl = self.commands[commandName]
         argValues = []
         for paramName, param in signature(impl).parameters.items():
+            if paramName in ("event", "self"):
+                continue
             paramType = TYPES_TO_TOKENS[param.annotation]
             try:
                 argType, argValue = args.pop(0)
