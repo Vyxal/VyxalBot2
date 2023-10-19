@@ -11,7 +11,7 @@ import base64
 import json
 import subprocess
 
-from gidgethub import HTTPException as GitHubHTTPException, ValidationError
+from gidgethub import BadRequest, HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from aiohttp import ClientSession
 from sechat import EventType
@@ -370,21 +370,26 @@ class Chat:
             f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'
             "_"
         )
-        await self.ghClient.gh.post(
-            f"/repos/{self.privateConfig['account']}/{repo}/issues",
-            data={
-                "title": title,
-                "body": body,
-                "labels": tags
-            },
-            oauth_token = await self.ghClient.appToken()
-        )
+        try:
+            await self.ghClient.gh.post(
+                f"/repos/{self.privateConfig['account']}/{repo}/issues",
+                data={
+                    "title": title,
+                    "body": body,
+                    "labels": tags
+                },
+                oauth_token = await self.ghClient.appToken()
+            )
+        except BadRequest as e:
+            yield f"Failed to open issue: {e.args}"
 
-    async def prodCommand(self, event: EventInfo, repo: str):
+    async def prodCommand(self, event: EventInfo, repo: str = ""):
         """Open a PR to update production."""
         if repo not in self.publicConfig["production"]:
             yield "Repository not configured."
             return
+        if len(repo) == 0:
+            repo = self.privateConfig["baseRepo"]
         try:
             await self.ghClient.gh.post(
                 f"/repos/{self.privateConfig['account']}/{repo}/pulls",
