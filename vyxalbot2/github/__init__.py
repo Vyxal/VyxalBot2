@@ -55,7 +55,7 @@ class GitHubApplication(Application):
         self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
         self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
 
-    def getJwt(*, app_id: str, private_key: str) -> str:
+    def getJwt(self, *, app_id: str, private_key: str) -> str:
         # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
         time_int = int(time.time())
         payload = {"iat": time_int, "exp": time_int + (7 * 60), "iss": app_id}
