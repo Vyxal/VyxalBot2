@@ -10,6 +10,7 @@ from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from dateutil.parser import parse as parseDatetime
 from cachetools import LRUCache
+import jwt
 from sechat import Room
 
 from vyxalbot2.types import AppToken, PublicConfigType
@@ -54,11 +55,19 @@ class GitHubApplication(Application):
         self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
         self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
 
+    def getJwt(*, app_id: str, private_key: str) -> str:
+        # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
+        time_int = int(time.time())
+        payload = {"iat": time_int, "exp": time_int + (7 * 60), "iss": app_id}
+        bearer_token = jwt.encode(payload, private_key, algorithm="RS256")
+
+        return bearer_token
+
     async def appToken(self) -> str:
         if self._appToken != None:
             if self._appToken.expires.timestamp() > time():
                 return self._appToken.token
-        jwt = get_jwt(app_id=self.appId, private_key=self.privkey)
+        jwt = self.getJwt(app_id=self.appId, private_key=self.privkey)
         async for installation in self.gh.getiter(
             "/app/installations",
             jwt=jwt,
