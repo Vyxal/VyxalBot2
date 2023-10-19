@@ -19,7 +19,7 @@ from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
     async def wrapper(self: "GitHubApplication", event: GitHubEvent, gh: AsyncioGitHubAPI):
-        async for line in fun(event):
+        async for line in fun(self, event):
             await self.room.send(line)
     return wrapper
 

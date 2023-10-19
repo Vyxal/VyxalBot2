@@ -78,7 +78,7 @@ class Chat:
                     parameters.append(f"[{parameter.name}: {parameter.annotation.__name__}]")
                 else:
                     parameters.append(f"<{parameter.name}: {parameter.annotation.__name__}>")
-            message = (f"`!!/{fullName} " + ", ".join(parameters)).strip() + "`: " + impl.__doc__
+            message = (f"`!!/{fullName} " + " ".join(parameters)).strip() + "`: " + impl.__doc__
             if name in help:
                 help[name].append(message)
             else:
@@ -346,7 +346,7 @@ class Chat:
             else:
                 yield "No."
 
-    async def issueOpenCommand(self, user: EventInfo, repo: str, title: str, body: str, tags: list[str] = []):
+    async def issueOpenCommand(self, event: EventInfo, repo: str, title: str, body: str, tags: list[str] = []):
         """Open an issue in a repository."""
         tagSet = set(tags)
         if repo in self.publicConfig["requiredLabels"]:
@@ -362,8 +362,8 @@ class Chat:
                         yield f"Must be tagged with one or more of " + ", ".join(f"`{i}`" for i in labelSet)
                         return
         body = body + (
-            f"\n\n_Issue created by {user.userName} [here]"
-            f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={user.messageIdent}#{user.messageIdent}'
+            f"\n\n_Issue created by {event.userName} [here]"
+            f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'
             "_"
         )
         await self.gh.post(
