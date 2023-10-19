@@ -22,7 +22,7 @@ The 2.5 Mega Refactoring™ includes a new command parser, rewritten from the gr
 New commands can have arguments of 3 datatypes: strings, numbers, and lists of strings. The syntax for these types is as follows:
 Strings: "content"
 Numbers: <normal numbers, nothing's changed here>
-Strarrays: `item,item,item`
+Strarrays: [item,item,item]
 The help for commands is now automatically generated, and comes with annotations so you can easily figure out what type an argument has.
 '''
 

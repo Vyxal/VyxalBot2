@@ -373,7 +373,7 @@ class Chat:
                 "body": body,
                 "labels": tags
             },
-            oauth_token = "" # TODO
+            oauth_token = await self.ghClient.appToken()
         )
 
     async def prodCommand(self, event: EventInfo, repo: str):

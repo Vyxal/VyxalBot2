@@ -57,9 +57,11 @@ class CommandParser:
                         stack.append(char)
                     elif char == '"':
                         state = ParseState.STRING
-                    elif char == "`":
+                    elif char == "[":
                         state = ParseState.STRARRAY
                         stack.append([])
+                    elif char == " ":
+                        pass
                     else:
                         yield TokenType.ERROR, f"Unexpected toplevel character {char}"
                         return
@@ -135,7 +137,7 @@ class CommandParser:
                         elif char == ",":
                             stack.append([])
                             break
-                        elif char == "`":
+                        elif char == "]":
                             yield TokenType.STRARRAY, ["".join(i) for i in stack if len(i)]
                             stack.clear()
                             state = ParseState.TOPLEVEL
