@@ -41,5 +41,16 @@
                 "[vV]3-.*": "PR: Version 3 Related"
             }
         }
+    },
+    "requiredLabels": {
+        "Vyxal": {
+            "issues": [
+                {
+                    "tags": ["version-2", "version-3"],
+                    "exclusive": true
+                }
+            ],
+            "prs": []
+        }
     }
 }
