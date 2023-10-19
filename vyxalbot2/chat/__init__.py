@@ -93,6 +93,8 @@ class Chat:
             return
         sentAt = datetime.now()
         response = [i async for i in self.processMessage(message.content.removeprefix("!!/"), EventInfo(message.user_name, message.user_id, message.message_id))]
+        if not len(response):
+            return
         responseIDs = [await self.room.reply(message.message_id, response[0])]
         for line in response[1:]:
             responseIDs.append(await self.room.send(line))
@@ -111,7 +113,8 @@ class Chat:
                 await self.onMessage(room, edit)
                 return
             response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), EventInfo(edit.user_name, edit.user_id, edit.message_id))]
-            response[0] = f":{edit.message_id} " + response[0]
+            if len(response):
+                response[0] = f":{edit.message_id} " + response[0]
             for x in range(min(len(idents), len(response))):
                 await self.room.edit(idents.pop(0), response.pop(0))
             for leftover in response:
