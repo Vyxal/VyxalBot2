@@ -73,7 +73,7 @@ class VyxalBot2:
         self.session = ClientSession()
         self.room = await self.bot.joinRoom(self.privateConfig["chat"]["room"])
         self.ghApp = GitHubApplication(self.room, self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.session, self.privateConfig["webhookSecret"])
-        self.chat = Chat(self.room, self.userDB, self.ghApp.gh, self.session, self.publicConfig, self.privateConfig, self.messages, self.statuses)
+        self.chat = Chat(self.room, self.userDB, self.ghApp, self.session, self.publicConfig, self.privateConfig, self.messages, self.statuses)
         await self.room.send(
             "Well, here we are again."
             if random.random() > 0.01

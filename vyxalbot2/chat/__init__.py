@@ -24,6 +24,7 @@ import yaml
 import logging
 
 from vyxalbot2.chat.reactions import Reactions
+from vyxalbot2.github import GitHubApplication
 from vyxalbot2.types import EventInfo
 
 from ..types import AppToken, PrivateConfigType, PublicConfigType, MessagesType
@@ -32,14 +33,14 @@ from ..userdb import UserDB
 from ..util import RAPTOR
 
 class Chat:
-    def __init__(self, room: Room, userDB: UserDB, gh: AsyncioGitHubAPI, session: ClientSession, publicConfig: PublicConfigType, privateConfig: PrivateConfigType, messages: MessagesType, statuses: list[str]):
+    def __init__(self, room: Room, userDB: UserDB, ghClient: GitHubApplication, session: ClientSession, publicConfig: PublicConfigType, privateConfig: PrivateConfigType, messages: MessagesType, statuses: list[str]):
         self.room = room
         self.userDB = userDB
         self.publicConfig = publicConfig
         self.privateConfig = privateConfig
         self.messages = messages
         self.statuses = statuses
-        self.gh = gh
+        self.ghClient = ghClient
         self.session = session
 
         self.logger = logging.getLogger("Chat")
@@ -366,7 +367,7 @@ class Chat:
             f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'
             "_"
         )
-        await self.gh.post(
+        await self.ghClient.gh.post(
             f"/repos/{self.privateConfig['account']}/{repo}/issues",
             data={
                 "title": title,
@@ -382,7 +383,7 @@ class Chat:
             yield "Repository not configured."
             return
         try:
-            await self.gh.post(
+            await self.ghClient.gh.post(
                 f"/repos/{self.privateConfig['account']}/{repo}/pulls",
                 data={
                     "title": f"Update production ({datetime.now().strftime('%b %d %Y')})",
@@ -390,7 +391,7 @@ class Chat:
                     "base": self.publicConfig["production"][repo]["base"],
                     "body": f"Requested by {event.userName} [here]({f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'}.",
                 },
-                oauth_token="" # TODO
+                oauth_token=await self.ghClient.appToken()
             )
         except ValidationError as e:
             yield f"Unable to open PR: {e}"
@@ -399,9 +400,9 @@ class Chat:
 
     async def idiomAddCommand(self, event: EventInfo, title: str, code: str, description: str, keywords: list[str] = []):
         """Add an idiom to the idiom list."""
-        file = await self.gh.getitem(
+        file = await self.ghClient.gh.getitem(
             f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
-            oauth_token="" # TODO
+            oauth_token=await self.ghClient.appToken(),
         )
         idioms = yaml.safe_load(base64.b64decode(file["content"]))
         if not idioms:
@@ -420,7 +421,7 @@ class Chat:
                 "keywords": keywords,
             }
         )
-        await self.gh.put(
+        await self.ghClient.gh.put(
             f"/repos/{self.privateConfig['account']}/vyxal.github.io/contents/src/data/idioms.yaml",
             data={
                 "message": f"Added \"{title}\" to the idiom list.\nRequested by {event.userName} here: {f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'}",
@@ -431,7 +432,7 @@ class Chat:
                 ).decode("utf-8"),
                 "sha": file["sha"],
             },
-            oauth_token="" # TODO,
+            oauth_token=await self.ghClient.appToken(),
         )
 
     async def pullCommand(self, event: EventInfo):
