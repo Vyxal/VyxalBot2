@@ -57,7 +57,7 @@ class GitHubApplication(Application):
 
     def getJwt(self, *, app_id: str, private_key: str) -> str:
         # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
-        time_int = int(time.time())
+        time_int = int(time())
         payload = {"iat": time_int, "exp": time_int + (7 * 60), "iss": app_id}
         bearer_token = jwt.encode(payload, private_key, algorithm="RS256")
 
