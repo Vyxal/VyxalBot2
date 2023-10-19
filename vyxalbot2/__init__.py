@@ -89,9 +89,7 @@ class VyxalBot2:
             await self.room.send("Shutting down...")
         except RuntimeError:
             pass
-        await wait_for(
-            self.bot.__aexit__(None, None, None), 6
-        )  # DO NOT TRY THIS AT HOME
+        await wait_for(self.bot.shutdown(), 6)
         await wait_for(self.session.close(), 3)
 
 def run():
