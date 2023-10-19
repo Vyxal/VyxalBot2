@@ -58,7 +58,7 @@ class Chat:
     def genCommands(self):
         for attrName in self.__dir__():
             attr = getattr(self, attrName)
-            if not inspect.isfunction(attr):
+            if not (callable(attr) and hasattr(attr, "__name__")):
                 continue
             if not attr.__name__.lower().endswith("command"):
                 continue
