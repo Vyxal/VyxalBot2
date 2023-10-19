@@ -313,7 +313,7 @@ class Chat:
 
     async def coffeeCommand(self, event: EventInfo, target: str = "me"):
         """Brew some coffee."""
-        if target == "me":
+        if target == "me" or not len(target):
             yield "☕"
         else:
             yield f"@{target} ☕"
