@@ -190,7 +190,8 @@ class GitHubApplication(Application):
             case "review_requested":
                 return  # user doesn't want this apparently
                 yield f'{formatUser(event.data["sender"])} requested {formatUser(event.data["requested_reviewer"])}\'s review on {formatIssue(pullRequest)}'
-                
+            case "ready_for_review":
+                yield f'{formatUser(event.data["sender"])} marked pull request {formatIssue(pullRequest)} ready for review'
             case _ as action if action in ["opened", "reopened", "enqueued"]:
                 yield f'{formatUser(event.data["sender"])} {action} pull request {formatIssue(pullRequest)} in {formatRepo(event.data["repository"])}'
                 if action == "opened":
