@@ -71,7 +71,7 @@ class GitHubApplication(Application):
                     private_key=self.privkey,
                 )
                 self._appToken = AppToken(
-                    tokenData["token"], parseDatetime(tokenData["expires_at"])
+                    tokenData["token"], parseDatetime(tokenData["expires_at"], ignoretz=True)
                 )
                 return self._appToken.token
         raise ValueError("Unable to locate installation")

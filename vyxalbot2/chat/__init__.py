@@ -302,7 +302,7 @@ class Chat:
     async def pingCommand(self, event: EventInfo, group: str, message: str):
         """Ping all members of a group. Use with care!"""
         group = group.removesuffix("s")
-        pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["id"] != event.userIdent])
+        pings = " ".join(["@" + target["name"] for target in self.userDB.membersOfGroup(group) if target["chatID"] != event.userIdent])
         if not len(pings):
             yield "Nobody to ping."
         else:
