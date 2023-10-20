@@ -182,7 +182,7 @@ class Chat:
     async def statusCommand(self, event: EventInfo):
         """I will tell you what I'm doing (maybe)."""
         status = random.choice(self.statuses)
-        if not status.endswith(".") and status.endswith(ascii_letters):
+        if not status.endswith(".") and status.endswith(tuple(ascii_letters)):
             status += "."
         else:
             status = status.removesuffix(";")
@@ -385,11 +385,11 @@ class Chat:
 
     async def prodCommand(self, event: EventInfo, repo: str = ""):
         """Open a PR to update production."""
+        if len(repo) == 0:
+            repo = self.privateConfig["baseRepo"]
         if repo not in self.publicConfig["production"]:
             yield "Repository not configured."
             return
-        if len(repo) == 0:
-            repo = self.privateConfig["baseRepo"]
         try:
             await self.ghClient.gh.post(
                 f"/repos/{self.privateConfig['account']}/{repo}/pulls",
