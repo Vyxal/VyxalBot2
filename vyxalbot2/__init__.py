@@ -104,7 +104,7 @@ def run():
     logging.basicConfig(
         format="[%(name)s] %(levelname)s: %(message)s",
         stream=sys.stdout,
-        level=logging.DEBUG,
+        level=logging.INFO,
     )
 
     with open(PUBLIC_CONFIG_PATH, "r") as f:
