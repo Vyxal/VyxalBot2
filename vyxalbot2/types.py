@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class GroupType(TypedDict, total=False):
     promotionRequires: list[str]
     canRun: list[str]
+    protected: list[int]
 
 
 class ProductionType(TypedDict):

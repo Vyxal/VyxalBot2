@@ -254,8 +254,11 @@ class Chat:
             else:
                 yield f"{target['name']} is already a member of {group}."
         else:
-            self.userDB.removeUserFromGroup(target, group)
-            yield f"{target['name']} removed from {group}."
+            if target["chatID"] in self.publicConfig["groups"][group].get("protected", []):
+                yield "That user may not be removed."
+            else:
+                self.userDB.removeUserFromGroup(target, group)
+                yield f"{target['name']} removed from {group}."
 
     async def permissionsGrantCommand(self, event: EventInfo, name: str, group: str):
         """Add a user to a group."""
