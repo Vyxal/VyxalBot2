@@ -370,7 +370,7 @@ class Chat:
                         return
         body = body + (
             f"\n\n_Issue created by {event.userName} [here]"
-            f'https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent}'
+            f'(https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'
             "_"
         )
         try:
