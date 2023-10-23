@@ -239,6 +239,7 @@ class GitHubApplication(Application):
             in self.publicConfig["importantRepositories"]
         ):
             await self.room.pin(message)
+        yield "" # force it to be a generator
 
     @wrap
     async def onFork(self, event: GitHubEvent):
