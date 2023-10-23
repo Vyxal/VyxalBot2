@@ -165,7 +165,7 @@ class CommandParser:
                 if command.startswith(commandName.split(" ")[0]):
                     maybeYouMeant.append(command)
             if len(maybeYouMeant):
-                raise ParseError(f"Unknown command. Valid subcommands of {commandName.split(' ')[0]} are: " + ", ".join(maybeYouMeant))
+                raise ParseError(f"Unknown command. Perhaps you forgot some quotes? Valid subcommands of {commandName.split(' ')[0]} are: " + ", ".join(maybeYouMeant))
             raise ParseError("Unknown command.") from None
         argValues = []
         for paramName, param in signature(impl).parameters.items():
