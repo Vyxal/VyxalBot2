@@ -453,3 +453,10 @@ class Chat:
             exit(-43)
         else:
             yield "Failed to pull!"
+
+    async def commitCommand(self, event: EventInfo):
+        result = subprocess.run(["git", "show",  "--oneline",  "-s",  "--no-color"])
+        if result.returncode != 0:
+            yield "Failed to get commit info!"
+        else:
+            yield f"Commit: {result.stdout.decode('utf-8').strip()}"
