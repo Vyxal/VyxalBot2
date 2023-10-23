@@ -455,7 +455,8 @@ class Chat:
             yield "Failed to pull!"
 
     async def commitCommand(self, event: EventInfo):
-        result = subprocess.run(["git", "show",  "--oneline",  "-s",  "--no-color"])
+        """Check the commit the bot is running off of"""
+        result = subprocess.run(["git", "show",  "--oneline",  "-s",  "--no-color"], capture_output=True)
         if result.returncode != 0:
             yield "Failed to get commit info!"
         else:
