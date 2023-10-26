@@ -83,9 +83,9 @@ class Reactions:
 
     async def mojo(self, event: MessageEvent, reMatch: re.Match):
         emojis = [
-            "".join(random.choices(("🤣", "😂"), weights=[12, 8], k=random.randint(3, 7)))
+            "".join(random.choices(("🤣", "😂"), weights=[12, 8], k=random.randint(3, 7))),
             "💯" * random.choice((1, 3, 5)),
-            "🔥" * random.randint(1, 10)
+            "🔥" * random.randint(1, 10),
         ]
         random.shuffle(emojis)
         emojis = "".join(emojis) + ("😳" * (random.randint(1, 10) == 1))
