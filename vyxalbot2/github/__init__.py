@@ -1,7 +1,7 @@
 import re
 from time import time
 
-from typing import Optional, Self
+from typing import Optional
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response, run_app
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
