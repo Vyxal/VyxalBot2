@@ -31,7 +31,6 @@ from gidgethub.routing import Router
 from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
-from platformdirs import user_state_path
 from dateutil.parser import parse as parseDatetime
 from uwuivy import uwuipy
 from vyxalbot2.github import GitHubApplication
@@ -95,8 +94,7 @@ class VyxalBot2:
 def run():
     PUBLIC_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PUBLIC", "config.json")
     PRIVATE_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PRIVATE", "private.json")
-    STORAGE_PATH = user_state_path("vyxalbot2", None, __version__)
-    os.makedirs(STORAGE_PATH, exist_ok=True)
+    STORAGE_PATH = os.environ.get("STORAGE_PATH", "storage.json")
     DATA_PATH = Path(__file__).resolve().parent.parent / "data"
     MESSAGES_PATH = DATA_PATH / "messages.toml"
     STATUSES_PATH = DATA_PATH / "statuses.txt"
@@ -120,7 +118,7 @@ def run():
         publicConfig,
         privateConfig,
         cast(Any, messages),
-        str(STORAGE_PATH / "storage.json"),
+        STORAGE_PATH,
         statuses,
     )
     run_app(app.run(), port=privateConfig["port"])
