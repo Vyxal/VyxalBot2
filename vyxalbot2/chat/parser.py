@@ -149,7 +149,7 @@ class CommandParser:
         args = list(self.parseArgs(command))
         try:
             ty, commandName = args.pop(0)
-        except StopIteration:
+        except IndexError:
             raise ParseError("Expected command name") from None
         if ty != TokenType.FLAG:
             raise ParseError(f"Expected command name, got {ty.name}")
