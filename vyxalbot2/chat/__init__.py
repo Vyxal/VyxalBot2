@@ -53,7 +53,7 @@ class Chat:
 
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.room.register(self.onEdit, EventType.EDIT)
-        Reactions(room, self, messages)
+        self.reactions = Reactions(room, self, messages)
 
     def genCommands(self):
         for attrName in self.__dir__():
@@ -87,6 +87,9 @@ class Chat:
         return help
 
     async def onMessage(self, room: Room, message: MessageEvent):
+        if self.reactions.onMessage(message):
+            # A reaction ran, so don't get pissy about invalid commands
+            return
         if message.user_id == self.room.userID:
             return
         if not message.content.startswith("!!/"):

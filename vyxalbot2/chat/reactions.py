@@ -41,13 +41,12 @@ class Reactions:
         self.chat = chat
         self.messages = messages
 
-        self.room.register(self.onMessage, EventType.MESSAGE)
-
     async def runCommand(self, name: str, event: MessageEvent, *args):
         async for line in self.chat.commands[name](EventInfo(event.user_name, event.user_id, event.message_id), *args):
             await self.room.send(line)
 
-    async def onMessage(self, room: Room, event: MessageEvent):
+    async def onMessage(self, event: MessageEvent):
+        didSomething = False
         for regex, function in MESSAGE_REGEXES.items():
             if function not in DO_NOT_IGNORE_COMMAND_PREFIX:
                 reMatch = re.fullmatch(regex, event.content.removeprefix("!!/"))
@@ -57,6 +56,8 @@ class Reactions:
                 if event.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
                     continue
                 await getattr(self, function)(event, reMatch)
+                didSomething = True
+        return didSomething
 
     async def info(self, event: MessageEvent, reMatch: re.Match):
         await self.runCommand("info", event)
