@@ -122,7 +122,7 @@ class GitHubApplication(Application):
         if len(pullRequest["labels"]):
             return
     
-        autotagConfig = self.publicConfig["autotag"].get(event.data["repository"]["full_name"])
+        autotagConfig = self.publicConfig["autotag"].get(event.data["repository"]["name"])
         if autotagConfig is None:
             autotagConfig = self.publicConfig["autotag"].get("*", {"prregex": {}, "issue2pr": {}})
         tags = set()
