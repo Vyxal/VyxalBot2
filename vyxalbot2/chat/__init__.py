@@ -87,7 +87,7 @@ class Chat:
         return help
 
     async def onMessage(self, room: Room, message: MessageEvent):
-        if self.reactions.onMessage(message):
+        if await self.reactions.onMessage(message):
             # A reaction ran, so don't get pissy about invalid commands
             return
         if message.user_id == self.room.userID:
