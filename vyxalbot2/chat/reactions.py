@@ -12,11 +12,12 @@ from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
 from vyxalbot2.util import RAPTOR
 
+OK_TO_SELF_REPLY = ["sus"]
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
-    (r"(wh?at( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
+    (r"(wh?[au]t( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"(!!/)?(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
     (r"((please|pls|plz) )?(make|let|have) velociraptors maul (?P<user>.+)",): "maul",
-    (r"(make?|brew)( a cup of)? coffee for (?P<user>.+)", r"(make?|brew) (?P<user>me)h? a coffee",): "coffee",
+    (r"(make?|brew)( a cup of|some)? coffee for (?P<user>.+)", r"(make?|brew) (?P<user>me)h?( a)? coffee",): "coffee",
     (r"(.* |^)(su+s(sy)?|amon?g ?us|suspicious)( .*|$)",): "sus",
     (
         r"(.* |^)([Ww]ho(mst)?|[Ww]hat) (did|done) (that|this|it).*",
@@ -26,7 +27,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
         r"(much |very |super |ultra |extremely )*(good|great|excellent|gaming) bot!*",
     ): "goodBot",
     (r"(hello|hey|hi|howdy|(good )?mornin['g]|(good )?evenin['g])( y'?all)?",): "hello",
-    (r"((good)?bye|adios|(c|see) ?ya\!?|'night|(good|night )night)( y'?all)?",): "goodbye",
+    (r"((good)?bye|adios|(c|see) ?ya\!?|'night|(good|night )night|\\o)( y'?all)?",): "goodbye",
 }
 MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
@@ -48,6 +49,8 @@ class Reactions:
         for regex, function in MESSAGE_REGEXES.items():
             reMatch = re.fullmatch(regex, event.content)
             if reMatch is not None:
+		if message.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
+                    continue
                 await getattr(self, function)(event, reMatch)
 
     async def info(self, event: MessageEvent, reMatch: re.Match):
