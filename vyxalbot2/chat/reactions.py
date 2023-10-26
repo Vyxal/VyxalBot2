@@ -12,7 +12,7 @@ from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
 from vyxalbot2.util import RAPTOR
 
-OK_TO_SELF_REPLY = ["sus", "mojo"]
+OK_TO_SELF_REPLY = ["sus"]
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?[au]t( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"(!!/)?(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
@@ -50,7 +50,7 @@ class Reactions:
         for regex, function in MESSAGE_REGEXES.items():
             reMatch = re.fullmatch(regex, event.content)
             if reMatch is not None:
-                if message.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
+                if event.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
                     continue
                 await getattr(self, function)(event, reMatch)
 
