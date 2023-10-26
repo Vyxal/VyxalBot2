@@ -12,7 +12,7 @@ from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
 from vyxalbot2.util import RAPTOR
 
-OK_TO_SELF_REPLY = ["sus"]
+OK_TO_SELF_REPLY = ["sus", "mojo"]
 MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     (r"(wh?[au]t( i[sz]|'s)? vyxal\??)", r"what vyxal i[sz]\??"): "info",
     (r"(!!/)?(pl(s|z|ease) )?make? meh? (a )?coo?kie?", r"cookie"): "cookie",
@@ -28,6 +28,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     ): "goodBot",
     (r"(hello|hey|hi|howdy|(good )?mornin['g]|(good )?evenin['g])( y'?all)?",): "hello",
     (r"((good)?bye|adios|(c|see) ?ya\!?|'night|(good|night )night|\\o)( y'?all)?",): "goodbye",
+    (r".*[Mm]ojo.*", ".*🔥+.*",): "mojo"
 }
 MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
@@ -79,3 +80,13 @@ class Reactions:
 
     async def goodbye(self, event: MessageEvent, reMatch: re.Match):
         await self.room.send(random.choice(self.messages["goodbye"]))
+
+    async def mojo(self, event: MessageEvent, reMatch: re.Match):
+        emojis = [
+            "".join(random.choices(("🤣", "😂"), weights=[12, 8], k=random.randint(3, 7)))
+            "💯" * random.choice((1, 3, 5)),
+            "🔥" * random.randint(1, 10)
+        ]
+        random.shuffle(emojis)
+        emojis = "".join(emojis) + ("😳" * (random.randint(1, 10) == 1))
+        await self.room.send(emojis)
