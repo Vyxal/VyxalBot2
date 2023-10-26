@@ -49,7 +49,7 @@ class Reactions:
         for regex, function in MESSAGE_REGEXES.items():
             reMatch = re.fullmatch(regex, event.content)
             if reMatch is not None:
-		if message.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
+                if message.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
                     continue
                 await getattr(self, function)(event, reMatch)
 
