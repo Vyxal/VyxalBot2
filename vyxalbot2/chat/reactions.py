@@ -29,7 +29,7 @@ MESSAGE_REGEXES_IN: dict[tuple[str, ...], str] = {
     ): "goodBot",
     (r"(hello|hey|hi|howdy|(good )?mornin['g]|(good )?evenin['g])( y'?all)?",): "hello",
     (r"((good)?bye|adios|(c|see) ?ya\!?|'night|(good|night )night|\\o)( y'?all)?",): "goodbye",
-    (r".*[Mm]ojo.*", ".*🔥+.*",): "mojo"
+    (r".*mojo.*", ".*🔥+.*",): "mojo"
 }
 MESSAGE_REGEXES: dict[str, str] = dict(
     chain.from_iterable(zip(k, repeat(v)) for k, v in MESSAGE_REGEXES_IN.items())
@@ -49,9 +49,9 @@ class Reactions:
         didSomething = False
         for regex, function in MESSAGE_REGEXES.items():
             if function not in DO_NOT_IGNORE_COMMAND_PREFIX:
-                reMatch = re.fullmatch(regex, event.content.removeprefix("!!/"))
+                reMatch = re.fullmatch(regex, event.content.lower().removeprefix("!!/"))
             else:
-                reMatch = re.fullmatch(regex, event.content)
+                reMatch = re.fullmatch(regex, event.content.lower())
             if reMatch is not None:
                 if event.user_id == self.room.userID and function not in OK_TO_SELF_REPLY:
                     continue
