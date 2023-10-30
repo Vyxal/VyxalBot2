@@ -23,9 +23,9 @@ async def getRoomOfMessage(session: ClientSession, ident: int):
             return None
         # may the lord have mercy on my soul
         soup = bs4.BeautifulSoup((await response.content.read()))
-        assert (nameSpan := soup.find(class_="room-name")) is bs4.Tag
-        assert (link := nameSpan.find("a")) is bs4.Tag
-        assert (href := link.get("href")) is str
+        assert isinstance(nameSpan := soup.find(class_="room-name"), bs4.Tag)
+        assert isinstance(link := nameSpan.find("a"), bs4.Tag)
+        assert isinstance(href := link.get("href"), str)
         return int(href.removeprefix("/").removesuffix("/").split("/")[1])
 
 async def getMessageRange(session: ClientSession, room: int, start: int, end: int):
