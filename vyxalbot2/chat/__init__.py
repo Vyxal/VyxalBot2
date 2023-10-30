@@ -450,6 +450,7 @@ class Chat:
         )
 
     async def trashCommand(self, event: EventInfo, startRaw: str, endRaw: str, target: int = TRASH):
+        """Move messages to a room (defaults to Trash)."""
         start = extractMessageIdent(startRaw)
         end = extractMessageIdent(endRaw)
         if start is None:
