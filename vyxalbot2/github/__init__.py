@@ -155,7 +155,7 @@ class GitHubApplication(Application):
             or event.data["pusher"]["name"] == GITHUB_MERGE_QUEUE
         ):
             return
-        branch = event.data["ref"].split("/")[2]
+        branch = "/".join(event.data["ref"].split("/")[2:])
         for commit in event.data["commits"]:
             if not commit["distinct"]:
                 continue

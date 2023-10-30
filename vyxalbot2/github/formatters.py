@@ -3,9 +3,9 @@ def msgify(text):
         text.split("\n")[0]
         .split("\r")[0]
         .split("\f")[0]
-        .replace("_", "\\_")
-        .replace("*", "\\*")
-        .replace("`", "\\`")
+        .replace("_", r"\_")
+        .replace("*", r"\*")
+        .replace("`", r"\`")
     )
 
 def linkify(text):
