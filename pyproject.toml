@@ -19,7 +19,7 @@ uwuivy = { git = "https://github.com/Vyxal/uwuivy.git", branch = "v0.1.0" }
 pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
-black = {version = "^23.9.1", allow-prereleases = true}
+black = {version = "^23.10.1", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core"]
