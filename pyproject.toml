@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.10"
 gidgethub = "^5.2.1"
 sechat = { git = "https://github.com/GingerIndustries/sechat.git", branch = "v2" }
-cachetools = "^5.3.1"
+cachetools = "^5.3.2"
 tomli = "^2.0.1"
 tinydb = "^4.7.1"
 pyjwt = "^2.7.0"
