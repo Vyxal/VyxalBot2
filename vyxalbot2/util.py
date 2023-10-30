@@ -32,7 +32,7 @@ async def getMessageRange(session: ClientSession, room: int, start: int, end: in
     before = end
     yield end
     while True:
-        async with session.get(f"https://chat.stackexchange.com/chats/{room}/events", data={
+        async with session.post(f"https://chat.stackexchange.com/chats/{room}/events", data={
             "before": str(before),
             "mode": "Messages",
             "msgCount": 500
