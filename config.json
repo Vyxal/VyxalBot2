@@ -8,7 +8,7 @@
     "groups": {
         "admin": {
             "promotionRequires": ["admin"],
-            "canRun": ["die", "prod", "pull"],
+            "canRun": ["die", "prod", "pull", "trash"],
             "protected": [533049]
         },
         "member": {
