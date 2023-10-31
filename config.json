@@ -4,11 +4,9 @@
         "Crosshatch",
         "Vyncode",
         "Vylight", 
-        "vyxal.github.io",
+        "vyxal.github.io"
     ],
-    "ignoredRepositories": [
-"ReleasePrepping", "sandbox"
-],
+    "ignoredRepositories": ["ReleasePrepping", "sandbox"],
     "groups": {
         "admin": {
             "promotionRequires": ["admin"],
