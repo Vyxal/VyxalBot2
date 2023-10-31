@@ -450,6 +450,7 @@ class Chat:
         )
 
     async def illiterateifyCommand(self, code: str, event: EventInfo):
+        """Convert literate code to sbcs"""
         async with self.session.get(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
             if response.status == 400:
                 yield f"Failed to illiterateify: {await response.text()}"
