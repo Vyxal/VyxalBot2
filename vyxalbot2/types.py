@@ -29,6 +29,7 @@ class PrivateConfigType(TypedDict):
     appID: str
     pem: str
     webhookSecret: str
+    tyxalInstance: str
 
     chat: ChatConfigType
 
