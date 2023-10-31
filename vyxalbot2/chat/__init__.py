@@ -449,7 +449,7 @@ class Chat:
             oauth_token=await self.ghClient.appToken(),
         )
 
-    async def illiterateifyCommand(self, code: str, event: EventInfo):
+    async def deliterateifyCommand(self, code: str, event: EventInfo):
         """Convert literate code to sbcs"""
         async with self.session.get(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
             if response.status == 400:
