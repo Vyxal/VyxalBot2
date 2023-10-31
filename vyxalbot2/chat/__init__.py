@@ -449,6 +449,15 @@ class Chat:
             oauth_token=await self.ghClient.appToken(),
         )
 
+    async def illiterateifyCommand(self, code: str, event: EventInfo):
+        async with self.session.get(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
+            if response.status == 400:
+                yield f"Failed to illiterateify: {await response.text()}"
+            elif response.status == 200:
+                yield f"`{await response.text()}`"
+            else:
+                yield f"Tyxal sent back an error response! ({response.status})"
+
     async def pullCommand(self, event: EventInfo):
         """Pull changes and restart."""
         if subprocess.run(["git", "pull"]).returncode == 0:
