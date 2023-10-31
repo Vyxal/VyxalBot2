@@ -2,9 +2,13 @@
     "importantRepositories": [
         "Vyxal",
         "Crosshatch",
-        "Vyncode"
+        "Vyncode",
+        "Vylight", 
+        "vyxal.github.io",
     ],
-    "ignoredRepositories": [],
+    "ignoredRepositories": [
+"ReleasePrepping", "sandbox"
+],
     "groups": {
         "admin": {
             "promotionRequires": ["admin"],
