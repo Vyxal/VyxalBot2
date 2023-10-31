@@ -4,6 +4,7 @@
         "Crosshatch",
         "Vyncode"
     ],
+    "ignoredRepositories": [],
     "groups": {
         "admin": {
             "promotionRequires": ["admin"],

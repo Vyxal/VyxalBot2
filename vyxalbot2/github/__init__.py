@@ -98,6 +98,8 @@ class GitHubApplication(Application):
             if repo := event.data.get("repository", False):
                 if repo["visibility"] == "private":
                     return Response(status=200)
+                if repo["name"] in self.publicConfig["ignoredRepositories"]:
+                    return Response(status=200)
             await self.ghRouter.dispatch(event, self.gh)
             return Response(status=200)
         except Exception:
