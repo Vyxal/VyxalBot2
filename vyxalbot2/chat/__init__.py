@@ -458,6 +458,8 @@ class Chat:
                 yield f"`{await response.text()}`"
             else:
                 yield f"Tyxal sent back an error response! ({response.status})"
+    # Add an alias
+    async def delitCommand(self, code: str, event: EventInfo): deliterateifyCommand(self, code, event)
 
     async def pullCommand(self, event: EventInfo):
         """Pull changes and restart."""
