@@ -47,6 +47,7 @@ class RequiredLabelsType(TypedDict):
 
 class PublicConfigType(TypedDict):
     importantRepositories: list[str]
+    ignoredRepositories: list[str]
     groups: dict[str, GroupType]
     production: dict[str, ProductionType]
     autotag: dict[str, AutotagType]
