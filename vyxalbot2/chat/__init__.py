@@ -449,9 +449,9 @@ class Chat:
             oauth_token=await self.ghClient.appToken(),
         )
 
-    async def deliterateifyCommand(self, code: str, event: EventInfo):
+    async def deliterateifyCommand(self, event: EventInfo, code: str):
         """Convert literate code to sbcs"""
-        async with self.session.get(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
+        async with self.session.post(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
             if response.status == 400:
                 yield f"Failed to illiterateify: {await response.text()}"
             elif response.status == 200:
@@ -459,7 +459,7 @@ class Chat:
             else:
                 yield f"Tyxal sent back an error response! ({response.status})"
     # Add an alias
-    async def delitCommand(self, code: str, event: EventInfo):
+    async def delitCommand(self, event: EventInfo, code: str):
         deliterateifyCommand(self, code, event)
       
     async def trashCommand(self, event: EventInfo, startRaw: str, endRaw: str, target: int = TRASH):
