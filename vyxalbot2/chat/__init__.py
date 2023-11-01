@@ -460,7 +460,8 @@ class Chat:
                 yield f"Tyxal sent back an error response! ({response.status})"
     # Add an alias
     async def delitCommand(self, event: EventInfo, code: str):
-        deliterateifyCommand(self, code, event)
+        async for line in deliterateifyCommand(self, code, event):
+            yield line
       
     async def trashCommand(self, event: EventInfo, startRaw: str, endRaw: str, target: int = TRASH):
         """Move messages to a room (defaults to Trash)."""
