@@ -6,7 +6,7 @@
         "Vylight", 
         "vyxal.github.io"
     ],
-    "ignoredRepositories": ["ReleasePrepping", "sandbox"],
+    "ignoredRepositories": ["Release-Prepping", "sandbox"],
     "groups": {
         "admin": {
             "promotionRequires": ["admin"],
