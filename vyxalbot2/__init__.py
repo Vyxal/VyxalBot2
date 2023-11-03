@@ -33,11 +33,16 @@ from gidgethub.apps import get_installation_access_token, get_jwt
 from cachetools import LRUCache
 from dateutil.parser import parse as parseDatetime
 from uwuivy import uwuipy
-from vyxalbot2.github import GitHubApplication
+from discord.utils import setup_logging
+from motor.motor_asyncio import AsyncIOMotorClient
+from vyxalbot2.commands.common import CommonCommands
 
+from vyxalbot2.github import GitHubApplication
+from vyxalbot2.reactions import Reactions
+from vyxalbot2.services.discord import DiscordService, VBClient
+from vyxalbot2.services.se import SEService
 from vyxalbot2.userdb import UserDB
-from vyxalbot2.types import PublicConfigType, PrivateConfigType, MessagesType, AppToken
-from vyxalbot2.chat import Chat
+from vyxalbot2.types import CommonData, PublicConfigType, PrivateConfigType, MessagesType, AppToken
 
 __version__ = "2.0.0"
 
@@ -57,39 +62,36 @@ class VyxalBot2:
         self.privateConfig = privateConfig
         self.messages = messages
         self.statuses = list(filter(lambda i: hash(i) != -327901152, statuses))
-        self.userDB = UserDB(storagePath, publicConfig["groups"])
 
         with open(privateConfig["pem"], "r") as f:
             self.privkey = f.read()
 
     async def run(self):
-        self.bot = Bot(logger=self.logger)
-        await self.bot.authenticate(
-            self.privateConfig["chat"]["email"],
-            self.privateConfig["chat"]["password"],
-            self.privateConfig["chat"]["host"],
-        )
-        self.session = ClientSession()
-        self.room = await self.bot.joinRoom(self.privateConfig["chat"]["room"])
-        self.ghApp = GitHubApplication(self.room, self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.session, self.privateConfig["webhookSecret"])
-        self.chat = Chat(self.room, self.userDB, self.ghApp, self.session, self.publicConfig, self.privateConfig, self.messages, self.statuses)
-        await self.room.send(
-            "Well, here we are again."
-            if random.random() > 0.01
-            else "GOOD MORNING, MOTHERF***ERS"
-        )
-        self.startupTime = datetime.now()
+        userDB = UserDB(AsyncIOMotorClient(self.privateConfig["mongoUrl"]), self.privateConfig["database"])
 
-        self.ghApp.on_shutdown.append(self.shutdown)
-        return self.ghApp
+        ghApp = GitHubApplication(self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.privateConfig["webhookSecret"])
+
+        common = CommonData(
+            self.statuses,
+            self.messages,
+            self.publicConfig,
+            self.privateConfig,
+            0,
+            datetime.now(),
+            userDB,
+            ghApp
+        )
+        reactions = Reactions(self.messages)
+        self.se = await SEService.create(reactions, common)
+        self.discord = await DiscordService.create(reactions, common)
+
+        ghApp.on_shutdown.append(self.shutdown)
+        return ghApp
 
     async def shutdown(self, _):
-        try:
-            await self.room.send("Shutting down...")
-        except RuntimeError:
-            pass
-        await wait_for(self.bot.shutdown(), 6)
-        await wait_for(self.session.close(), 3)
+        await self.se.shutdown()
+        await self.discord.shutdown()
+        
 
 def run():
     PUBLIC_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PUBLIC", "config.json")
@@ -99,11 +101,7 @@ def run():
     MESSAGES_PATH = DATA_PATH / "messages.toml"
     STATUSES_PATH = DATA_PATH / "statuses.txt"
 
-    logging.basicConfig(
-        format="[%(name)s] %(levelname)s: %(message)s",
-        stream=sys.stdout,
-        level=logging.INFO,
-    )
+    setup_logging()
 
     with open(PUBLIC_CONFIG_PATH, "r") as f:
         publicConfig = json.load(f)

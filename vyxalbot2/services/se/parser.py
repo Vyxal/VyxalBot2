@@ -7,6 +7,8 @@ from inspect import signature
 from sechat.room import Room
 from sechat.events import MessageEvent
 
+from vyxalbot2.commands import Command
+
 class ParseState(Enum):
     TOPLEVEL = auto()
     FLAG = auto()
@@ -35,7 +37,7 @@ class ParseError(Exception):
         self.message = message
 
 class CommandParser:
-    def __init__(self, commands: dict[str, Callable]):
+    def __init__(self, commands: dict[str, Command]):
         self.commands = commands
 
     def parseArgs(self, args: str):
@@ -154,11 +156,14 @@ class CommandParser:
         if ty != TokenType.FLAG:
             raise ParseError(f"Expected command name, got {ty.name}")
         assert isinstance(commandName, str)
-        while len(args) and args[0][0] == TokenType.FLAG:
-            assert isinstance((i := args.pop(0)[1]), str)
-            commandName += " " + i
+        if commandName not in self.commands:
+            while len(args) and args[0][0] == TokenType.FLAG:
+                assert isinstance((i := args.pop(0)[1]), str)
+                commandName += " " + i
+                if commandName in self.commands:
+                    break
         try:
-            impl = self.commands[commandName]
+            impl = self.commands[commandName].impl
         except KeyError:
             maybeYouMeant = []
             for command in self.commands.keys():
@@ -171,7 +176,10 @@ class CommandParser:
         for paramName, param in signature(impl).parameters.items():
             if paramName in ("event", "self"):
                 continue
-            paramType = TYPES_TO_TOKENS[param.annotation]
+            if issubclass(param.annotation, Enum):
+                paramType = TokenType.FLAG
+            else:
+                paramType = TYPES_TO_TOKENS[param.annotation]
             try:
                 argType, argValue = args.pop(0)
             except IndexError:
@@ -182,10 +190,15 @@ class CommandParser:
             else:
                 if argType == TokenType.ERROR:
                     raise ParseError(str(argValue))
-                if argType == TokenType.FLAG:
-                    argType = TokenType.STRING
                 if argType != paramType:
                     raise ParseError(f"Expected {paramType.name} for {paramName} but got {argType.name}")
-                argValues.append(argValue)
+                if argType == TokenType.FLAG:
+                    assert issubclass(param.annotation, Enum)
+                    try:
+                        argValues.append(param.annotation(argValue))
+                    except ValueError:
+                        raise ParseError(f"Invalid value for {paramName}! Expected one of: {', '.join(member.value for member in param.annotation)}")
+                else:
+                    argValues.append(argValue)
         return commandName, impl, argValues
         

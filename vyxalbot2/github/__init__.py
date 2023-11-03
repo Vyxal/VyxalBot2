@@ -12,6 +12,7 @@ from dateutil.parser import parse as parseDatetime
 from cachetools import LRUCache
 import jwt
 from sechat import Room
+from vyxalbot2.services import PinThat, Service
 
 from vyxalbot2.types import AppToken, PublicConfigType
 
@@ -19,15 +20,15 @@ from .formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
-    async def wrapper(self: "GitHubApplication", event: GitHubEvent, gh: AsyncioGitHubAPI):
+    async def wrapper(self: "GitHubApplication", service: Service, event: GitHubEvent, gh: AsyncioGitHubAPI):
         async for line in fun(self, event):
-            await self.room.send(line)
+            await service.send(line)
     return wrapper
 
 class GitHubApplication(Application):
-    def __init__(self, room: Room, publicConfig: PublicConfigType, privkey: str, appId: str, account: str, session: ClientSession, webhookSecret: str):
+    def __init__(self, publicConfig: PublicConfigType, privkey: str, appId: str, account: str, webhookSecret: str):
         super().__init__()
-        self.room = room
+        self.services = []
         self.privkey = privkey
         self.appId = appId
         self.account = account
@@ -37,7 +38,7 @@ class GitHubApplication(Application):
         self._appToken: Optional[AppToken] = None
         self.ghRouter = Router()
         self.cache = LRUCache(maxsize=5000)
-        self.gh = AsyncioGitHubAPI(session, "VyxalBot2", cache=self.cache)
+        self.gh = AsyncioGitHubAPI(ClientSession(), "VyxalBot2", cache=self.cache)
 
         self.router.add_post("/webhook", self.onHookRequest)
         self.ghRouter.add(self.onPushAction, "push")
@@ -109,7 +110,8 @@ class GitHubApplication(Application):
                 msg = f"An error occured while processing a request!"
             self.logger.exception(msg)
             try:
-                await self.room.send(f"@Ginger " + msg)
+                for service in self.services:
+                    await service.send(f"@Ginger " + msg)
             except RuntimeError:
                 pass
             return Response(status=500)
@@ -232,16 +234,13 @@ class GitHubApplication(Application):
         # attempt to match version number, otherwise default to the whole name
         if match := re.search(r"\d.*", releaseName):
             releaseName = match[0]
-        # no yield here, we need to pin it
-        message = await self.room.send(
-            f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
-        )
+        
+        yield f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         if (
             event.data["repository"]["name"]
             in self.publicConfig["importantRepositories"]
         ):
-            await self.room.pin(message)
-        yield "" # force it to be a generator
+            yield PinThat
 
     @wrap
     async def onFork(self, event: GitHubEvent):
