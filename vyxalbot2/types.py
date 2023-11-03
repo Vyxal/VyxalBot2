@@ -28,6 +28,10 @@ class ChatConfigType(TypedDict):
     email: str
     password: str
 
+class DiscordConfigType(TypedDict):
+    token: str
+    guild: int
+    eventChannel: int
 
 class PrivateConfigType(TypedDict):
     port: int
@@ -42,10 +46,8 @@ class PrivateConfigType(TypedDict):
     mongoUrl: str
     database: str
 
-    discordToken: str
-    guild: int
-
     chat: ChatConfigType
+    discord: DiscordConfigType
 
 class AutotagType(TypedDict):
     issue2pr: dict[str, str]

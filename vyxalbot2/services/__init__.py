@@ -25,7 +25,7 @@ class Service:
     def invokeCommand(self, name: str, event: "EventInfo", *args):
         return self.commands.invoke(name, event, *args)
 
-    async def send(self, message: str):
+    async def send(self, message: str) -> int:
         raise NotImplementedError
 
     async def pin(self, message: int):

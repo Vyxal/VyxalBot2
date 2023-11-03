@@ -21,8 +21,12 @@ from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
     async def wrapper(self: "GitHubApplication", service: Service, event: GitHubEvent, gh: AsyncioGitHubAPI):
+        ids = []
         async for line in fun(self, event):
-            await service.send(line)
+            if line == PinThat:
+                await service.pin(ids[-1])
+                continue
+            ids.append(await service.send(line))
     return wrapper
 
 class GitHubApplication(Application):

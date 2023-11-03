@@ -5,7 +5,7 @@ from asyncio import Event, get_event_loop
 import logging
 import inspect
 
-from discord import Client, Intents, Interaction, Object
+from discord import Client, Intents, Interaction, Object, TextChannel
 from discord.app_commands import CommandTree, Command as DiscordCommand, Group, Choice, choices
 from vyxalbot2.commands import Command
 from vyxalbot2.commands.discord import DiscordCommands
@@ -79,8 +79,8 @@ class VBClient(Client):
 class DiscordService(Service):
     @classmethod
     async def create(cls, reactions: Reactions, common: CommonData):
-        client = VBClient(common.privateConfig["guild"])
-        await client.login(common.privateConfig["discordToken"])
+        client = VBClient(common.privateConfig["discord"]["guild"])
+        await client.login(common.privateConfig["discord"]["token"])
         instance = cls(client, reactions, common)
         await instance.startup()
         return instance
@@ -93,6 +93,10 @@ class DiscordService(Service):
         self.client = client
         self.common = common
         self.reactions = reactions
+
+        eventChannel = self.client.get_channel(self.common.privateConfig["discord"]["eventChannel"])
+        assert isinstance(eventChannel, TextChannel)
+        self.eventChannel = eventChannel
 
         for command in self.commands.commands.values():
             self.client.addCommand(self, command)
@@ -107,4 +111,8 @@ class DiscordService(Service):
         self.clientTask.cancel()
         await self.clientTask
 
-    
+    async def send(self, message: str):
+        return (await self.eventChannel.send(message)).id
+
+    async def pin(self, message: int):
+        await self.eventChannel.get_partial_message(message).pin()

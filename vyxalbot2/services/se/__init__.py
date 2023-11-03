@@ -73,6 +73,12 @@ class SEService(Service):
     async def shutdown(self):
         await self.bot.shutdown()
 
+    async def send(self, message: str):
+        return await self.room.send(message)
+
+    async def pin(self, message: int):
+        await self.room.pin(message)
+
     async def onMessage(self, room: Room, message: MessageEvent):
         event = EventInfo(
             message.content,

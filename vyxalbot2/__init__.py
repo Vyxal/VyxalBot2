@@ -84,6 +84,8 @@ class VyxalBot2:
         reactions = Reactions(self.messages)
         self.se = await SEService.create(reactions, common)
         self.discord = await DiscordService.create(reactions, common)
+        ghApp.services.append(self.se)
+        ghApp.services.append(self.discord)
 
         ghApp.on_shutdown.append(self.shutdown)
         return ghApp
