@@ -1,38 +1,23 @@
-from asyncio import wait_for
-import inspect
-from time import time
-from typing import Callable
 from datetime import datetime
-from string import ascii_letters
+from typing import cast
+from urllib.parse import urlparse, urlunparse
 
-import re
 import random
-import codecs
-import base64
-import json
-import subprocess
-from discord import User
+import logging
 
-from gidgethub import BadRequest, HTTPException as GitHubHTTPException, ValidationError
-from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from aiohttp import ClientSession
+from bs4 import BeautifulSoup, Tag
 from sechat import Bot, EventType
-from tinydb.table import Document
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
-from uwuivy import uwuipy
+from markdownify import MarkdownConverter
 
-import yaml
-import logging
-from vyxalbot2.commands.common import CommonCommands
 from vyxalbot2.commands.se import SECommands
 
 from vyxalbot2.reactions import Reactions
-from vyxalbot2.github import GitHubApplication
 from vyxalbot2.services import PinThat, Service
 from vyxalbot2.services.se.parser import CommandParser, ParseError
-from vyxalbot2.types import CommonData, EventInfo, PrivateConfigType, PublicConfigType, MessagesType
-from vyxalbot2.userdb import UserDB
+from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.util import resolveChatPFP
 
 class SEService(Service):
@@ -55,6 +40,7 @@ class SEService(Service):
         self.room = room
         self.common = common
         self.reactions = reactions
+        self.converter = MarkdownConverter(autolinks=False)
 
         self.pfpCache: dict[int, str] = {}
 
@@ -92,9 +78,19 @@ class SEService(Service):
                     self.pfpCache[user] = resolveChatPFP((await response.json())["email_hash"])
         return self.pfpCache[user]
 
+    def preprocessMessage(self, message: str):
+        soup = BeautifulSoup(message)
+        for tag in soup.find_all("a"):
+            if not isinstance(tag, Tag):
+                continue
+            url = urlparse(tag.attrs["href"])
+            if not url.netloc:
+                tag.attrs["href"] = urlunparse(("https", "chat.stackexchange.com", url.path, url.params, url.query, url.fragment))
+        return cast(str, self.converter.convert_soup(soup))
+
     async def onMessage(self, room: Room, message: MessageEvent):
         event = EventInfo(
-            content=message.content,
+            content=self.preprocessMessage(message.content),
             userName=message.user_name,
             pfp=await self.getPFP(message.user_id),
             userIdent=message.user_id,
@@ -154,7 +150,7 @@ class SEService(Service):
                 with self.messageSignal.muted(), self.commandRequestSignal.muted():
                     await self.onMessage(room, edit)
             else:
-                response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), event)]
+                response = [i async for i in self.processMessage(self.preprocessMessage(edit.content.removeprefix("!!/")), event)]
                 for line in response:
                     await self.commandResponseSignal.send_async(line=line)
                 if len(response):
