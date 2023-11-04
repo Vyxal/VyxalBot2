@@ -91,7 +91,7 @@ class SEService(Service):
         for tag in soup.find_all("img"):
             if not isinstance(tag, Tag):
                 continue
-            tag.replace_with(f"""<a href="{tag.attrs['src']}">{tag.attrs['src']}</a>""")
+            tag.replace_with(tag.attrs["src"])
         return cast(str, self.converter.convert_soup(soup))
 
     async def onMessage(self, room: Room, message: MessageEvent):
