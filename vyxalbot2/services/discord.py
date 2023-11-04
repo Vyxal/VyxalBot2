@@ -4,7 +4,7 @@ from asyncio import get_event_loop
 import logging
 import inspect
 
-from discord import Client, CustomActivity, Intents, Interaction, Message, Object, TextChannel
+from discord import Client, CustomActivity, Game, Intents, Interaction, Message, Object, TextChannel
 from discord.app_commands import CommandTree, Command as DiscordCommand, Group
 from discord.ext.tasks import loop
 from vyxalbot2.commands import Command
@@ -79,12 +79,11 @@ class VBClient(Client):
         ))
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
-        await self.change_presence(activity=CustomActivity(name=random.choice(self.statuses)))
         self.updateStatus.start()
 
     @loop(hours=1)
     async def updateStatus(self):
-        await self.change_presence(activity=CustomActivity(name=random.choice(self.statuses)))
+        await self.change_presence(activity=Game(name=random.choice(self.statuses)))
 
 
 class DiscordService(Service):
