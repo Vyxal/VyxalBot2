@@ -1,22 +1,23 @@
-from typing import Any, AsyncGenerator, Callable, Optional
-from types import FunctionType
-from asyncio import Event, get_event_loop
+import random
+from asyncio import get_event_loop
 
 import logging
 import inspect
 
-from discord import Client, Intents, Interaction, Message, Object, TextChannel
-from discord.app_commands import CommandTree, Command as DiscordCommand, Group, Choice, choices
+from discord import Client, CustomActivity, Intents, Interaction, Message, Object, TextChannel
+from discord.app_commands import CommandTree, Command as DiscordCommand, Group
+from discord.ext.tasks import loop
 from vyxalbot2.commands import Command
 from vyxalbot2.commands.discord import DiscordCommands
 from vyxalbot2.services import Service
 from vyxalbot2.reactions import Reactions
-from vyxalbot2.types import CommandImpl, CommonData, EventInfo, PrivateConfigType
+from vyxalbot2.types import CommandImpl, CommonData, EventInfo
 
 class VBClient(Client):
-    def __init__(self, guild: int):
+    def __init__(self, guild: int, statuses: list[str]):
         super().__init__(intents=Intents.all())
         self.guild = Object(guild)
+        self.statuses = statuses
         self.tree = CommandTree(self)
 
     def wrap(self, service: "DiscordService", impl: CommandImpl):
@@ -78,12 +79,17 @@ class VBClient(Client):
         ))
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
+        self.updateStatus.start()
+
+    @loop(hours=1)
+    async def updateStatus(self):
+        await self.change_presence(activity=CustomActivity(name=random.choice(self.statuses)))
 
 
 class DiscordService(Service):
     @classmethod
     async def create(cls, reactions: Reactions, common: CommonData):
-        client = VBClient(common.privateConfig["discord"]["guild"])
+        client = VBClient(common.privateConfig["discord"]["guild"], common.statuses)
         await client.login(common.privateConfig["discord"]["token"])
         instance = cls(client, reactions, common)
         await instance.startup()
