@@ -20,13 +20,15 @@ from .formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
-    async def wrapper(self: "GitHubApplication", service: Service, event: GitHubEvent, gh: AsyncioGitHubAPI):
-        ids = []
-        async for line in fun(self, event):
-            if line == PinThat:
-                await service.pin(ids[-1])
-                continue
-            ids.append(await service.send(line))
+    async def wrapper(self: "GitHubApplication", event: GitHubEvent, services: list[Service], gh: AsyncioGitHubAPI):
+        lines = [i async for i in fun(self, event)]
+        for service in services:
+            ids = []
+            for line in lines:
+                if line == PinThat:
+                    await service.pin(ids[-1])
+                    continue
+                ids.append(await service.send(line))
     return wrapper
 
 class GitHubApplication(Application):
@@ -105,7 +107,7 @@ class GitHubApplication(Application):
                     return Response(status=200)
                 if repo["name"] in self.publicConfig["ignoredRepositories"]:
                     return Response(status=200)
-            await self.ghRouter.dispatch(event, self.gh)
+            await self.ghRouter.dispatch(event, self.services, self.gh)
             return Response(status=200)
         except Exception:
             if event:
