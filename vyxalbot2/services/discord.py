@@ -128,12 +128,15 @@ class DiscordService(Service):
             messageIdent=message.id,
             service=self
         )
-        await self.messageSignal.send_async(self, event=event)
         channel = self.client.get_channel(message.channel.id)
-        if not isinstance(channel, TextChannel):
-            return
-        async for line in self.reactions.onMessage(self, event):
-            await channel.send(line)
+        reactions = [i async for i in self.reactions.onMessage(self, event)]
+        if len(reactions):
+            if not isinstance(channel, TextChannel):
+                return
+            for line in reactions:
+                await channel.send(line)
+        await self.messageSignal.send_async(self, event=event)
+
 
     async def shutdown(self):
         self.clientTask.cancel()
