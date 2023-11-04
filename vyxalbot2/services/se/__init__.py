@@ -105,6 +105,8 @@ class SEService(Service):
         if await self.reactions.onMessage(self, event):
             # A reaction ran, so don't get pissy about invalid commands
             return
+        if message.user_id == self.room.userID and message.content.startswith("◈"):
+            return
         await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if message.user_id == self.room.userID:
             return
@@ -132,6 +134,8 @@ class SEService(Service):
             edit.message_id,
             self
         )
+        if edit.user_id == self.room.userID and edit.content.startswith("◈"):
+            return
         await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if edit.user_id == self.room.userID:
             return
