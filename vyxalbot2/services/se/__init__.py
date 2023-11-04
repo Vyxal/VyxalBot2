@@ -105,14 +105,14 @@ class SEService(Service):
         if message.user_id == self.room.userID:
             return
         await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
-        if not message.content.startswith("!!/"):
-            return
         reactions = [i async for i in self.reactions.onMessage(self, event)]
         if len(reactions):
             await self.commandRequestSignal.send_async(self, event=event)
             for line in reactions:
                 await self.send(line)
                 await self.commandResponseSignal.send_async(self, line=line)
+            return
+        if not message.content.startswith("!!/"):
             return
         await self.commandRequestSignal.send_async(self, event=event)
         sentAt = datetime.now()
