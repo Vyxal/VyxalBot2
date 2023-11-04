@@ -105,9 +105,9 @@ class SEService(Service):
         if await self.reactions.onMessage(self, event):
             # A reaction ran, so don't get pissy about invalid commands
             return
+        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if message.user_id == self.room.userID:
             return
-        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if not message.content.startswith("!!/"):
             return
         sentAt = datetime.now()
@@ -132,9 +132,9 @@ class SEService(Service):
             edit.message_id,
             self
         )
+        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if edit.user_id == self.room.userID:
             return
-        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if not edit.content.startswith("!!/"):
             return
         if edit.message_id not in self.editDB:

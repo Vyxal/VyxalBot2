@@ -33,8 +33,8 @@ class DiscordBridge:
         self.logger.info("Ready!")
 
     async def onMessage(self, sender, event: EventInfo, directedAtUs: bool = False):
-        if directedAtUs:
-            return
+        # if directedAtUs:
+        #     return
         assert self.webhook is not None
         await self.webhook.send(event.content, username=event.userName, avatar_url=event.pfp)
 
