@@ -94,13 +94,13 @@ class SEService(Service):
 
     async def onMessage(self, room: Room, message: MessageEvent):
         event = EventInfo(
-            message.content,
-            message.user_name,
-            await self.getPFP(message.user_id),
-            message.user_id,
-            message.room_id,
-            message.message_id,
-            self
+            content=message.content,
+            userName=message.user_name,
+            pfp=await self.getPFP(message.user_id),
+            userIdent=message.user_id,
+            roomIdent=message.room_id,
+            messageIdent=message.message_id,
+            service=self
         )
         if await self.reactions.onMessage(self, event):
             # A reaction ran, so don't get pissy about invalid commands
@@ -127,13 +127,13 @@ class SEService(Service):
 
     async def onEdit(self, room: Room, edit: EditEvent):
         event = EventInfo(
-            edit.content,
-            edit.user_name,
-            await self.getPFP(edit.user_id),
-            edit.user_id,
-            edit.room_id,
-            edit.message_id,
-            self
+            content=edit.content,
+            userName=edit.user_name,
+            pfp=await self.getPFP(edit.user_id),
+            userIdent=edit.user_id,
+            roomIdent=edit.room_id,
+            messageIdent=edit.message_id,
+            service=self
         )
         if edit.user_id == self.room.userID:
             return
