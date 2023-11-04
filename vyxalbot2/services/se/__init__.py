@@ -86,6 +86,12 @@ class SEService(Service):
             url = urlparse(tag.attrs["href"])
             if not url.netloc:
                 tag.attrs["href"] = urlunparse(("https", "chat.stackexchange.com", url.path, url.params, url.query, url.fragment))
+            elif not url.scheme:
+                tag.attrs["href"] = urlunparse(("https", url.netloc, url.path, url.params, url.query, url.fragment))
+        for tag in soup.find_all("img"):
+            if not isinstance(tag, Tag):
+                continue
+            tag.replace_with(f"""<a href="{tag.attrs['src']}">{tag.attrs['src']}</a>""")
         return cast(str, self.converter.convert_soup(soup))
 
     async def onMessage(self, room: Room, message: MessageEvent):
