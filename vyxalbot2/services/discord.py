@@ -79,6 +79,7 @@ class VBClient(Client):
         ))
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
+        await self.change_presence(activity=CustomActivity(name=random.choice(self.statuses)))
         self.updateStatus.start()
 
     @loop(hours=1)
