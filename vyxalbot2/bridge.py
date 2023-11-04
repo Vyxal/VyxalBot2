@@ -39,8 +39,11 @@ class DiscordBridge:
         await self.webhook.send(event.content, username=event.userName, avatar_url=event.pfp)
 
     async def onDiscordMessage(self, sender, event: EventInfo, directedAtUs: bool = False):
+        assert self.discord.client.user is not None
         assert self.webhook is not None
         if event.roomIdent != self.channel.id:
+            return
+        if event.userIdent == self.discord.client.user.id:
             return
         if event.userIdent == self.webhook.id:
             return
