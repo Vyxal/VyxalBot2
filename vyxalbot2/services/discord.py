@@ -3,6 +3,7 @@ from asyncio import get_event_loop
 
 import logging
 import inspect
+import re
 
 from discord import Client, CustomActivity, Game, Intents, Interaction, Message, Object, TextChannel
 from discord.app_commands import CommandTree, Command as DiscordCommand, Group
@@ -128,6 +129,10 @@ class DiscordService(Service):
             messageIdent=message.id,
             service=self
         )
+        event.content = re.sub(r"<:(\w+):(\d+)>", lambda m: m.group(1), event.content)
+        for embed in message.embeds:
+            if embed.image is not None and embed.image.url is not None:
+                event.content += " " + embed.image.url
         assert self.client.user is not None
         if message.author.id == self.client.user.id:
             return
