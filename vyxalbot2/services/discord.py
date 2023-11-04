@@ -128,6 +128,11 @@ class DiscordService(Service):
             messageIdent=message.id,
             service=self
         )
+        assert self.client.user is not None
+        if message.author.id == self.client.user.id:
+            return
+        if message.channel.id == self.common.privateConfig["discord"]["bridgeChannel"]:
+            return
         channel = self.client.get_channel(message.channel.id)
         reactions = [i async for i in self.reactions.onMessage(self, event)]
         if len(reactions):
