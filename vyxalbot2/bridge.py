@@ -21,6 +21,8 @@ class DiscordBridge:
         assert isinstance(channel, TextChannel)
         self.channel = channel
         source.messageSignal.connect(self.onMessage, source, False)
+        source.commandRequestSignal.connect(self.onMessage, source, False)
+        source.commandResponseSignal.connect(self.onCommandResponse, source, False)
         discord.messageSignal.connect(self.onDiscordMessage, discord, False)
 
     async def fetchPFP(self, pfp: str):
@@ -32,9 +34,12 @@ class DiscordBridge:
         self.webhook = (await self.channel.webhooks())[0]
         self.logger.info("Ready!")
 
+    async def onCommandResponse(self, sender, line: str):
+        await self.channel.send(line)
+
     async def onMessage(self, sender, event: EventInfo, directedAtUs: bool = False):
-        # if directedAtUs:
-        #     return
+        if directedAtUs:
+            return
         assert self.webhook is not None
         await self.webhook.send(event.content, username=event.userName, avatar_url=event.pfp)
 

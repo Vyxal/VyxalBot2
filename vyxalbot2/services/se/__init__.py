@@ -105,13 +105,12 @@ class SEService(Service):
         if await self.reactions.onMessage(self, event):
             # A reaction ran, so don't get pissy about invalid commands
             return
-        if message.user_id == self.room.userID and message.content.startswith("◈"):
-            return
-        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if message.user_id == self.room.userID:
             return
+        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if not message.content.startswith("!!/"):
             return
+        await self.commandRequestSignal.send_async(self, event=event)
         sentAt = datetime.now()
         response = [i async for i in self.processMessage(message.content.removeprefix("!!/"), event)]
         if not len(response):
@@ -123,6 +122,8 @@ class SEService(Service):
                 continue
             responseIDs.append(await self.room.send(line))
         self.editDB[message.message_id] = (sentAt, responseIDs)
+        for line in response:
+            await self.commandResponseSignal.send_async(self, line=line)
 
     async def onEdit(self, room: Room, edit: EditEvent):
         event = EventInfo(
@@ -134,31 +135,34 @@ class SEService(Service):
             edit.message_id,
             self
         )
-        if edit.user_id == self.room.userID and edit.content.startswith("◈"):
-            return
-        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if edit.user_id == self.room.userID:
             return
+        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if not edit.content.startswith("!!/"):
             return
+        await self.commandRequestSignal.send_async(self, event=event)
         if edit.message_id not in self.editDB:
-            await self.onMessage(room, edit)
+            with self.messageSignal.muted(), self.commandRequestSignal.muted():
+                await self.onMessage(room, edit)
         else:
             sentAt, idents = self.editDB[edit.message_id]
             if (datetime.now() - sentAt).seconds > (60 * 2): # margin of error
-                with self.messageSignal.muted():
+                with self.messageSignal.muted(), self.commandRequestSignal.muted():
                     await self.onMessage(room, edit)
-                return
-            response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), event)]
-            if len(response):
-                response[0] = f":{edit.message_id} " + response[0]
-            for x in range(min(len(idents), len(response))):
-                await self.room.edit(idents.pop(0), response.pop(0))
-            for leftover in response:
-                await self.room.send(leftover)
-            for leftover in idents:
-                await self.room.delete(leftover)
-            self.editDB.pop(edit.message_id)
+            else:
+                response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), event)]
+                for line in response:
+                    await self.commandResponseSignal.send_async(line=line)
+                if len(response):
+                    response[0] = f":{edit.message_id} " + response[0]
+                for x in range(min(len(idents), len(response))):
+                    await self.room.edit(idents.pop(0), response.pop(0))
+                for leftover in response:
+                    await self.room.send(leftover)
+                for leftover in idents:
+                    await self.room.delete(leftover)
+                self.editDB.pop(edit.message_id)
+        # we always check the DB regardless of how we responded
         for key, value in self.editDB.copy().items():
             if (datetime.now() - value[0]).seconds > (60 * 2):
                 self.editDB.pop(key)
