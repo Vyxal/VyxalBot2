@@ -17,6 +17,7 @@ class User(Model):
     pfp: str
     groups: list[str] = []
     linked: dict[str, ObjectId] = {}
+    bonusData: dict[str, str] = {}
 
 class UserDBOld:
     def __init__(self, dbPath: str, groupConfig: dict[str, GroupType]):

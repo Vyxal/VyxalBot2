@@ -1,5 +1,7 @@
 from typing import Self, TYPE_CHECKING
 
+from blinker import Namespace, Signal
+
 if TYPE_CHECKING:
     from vyxalbot2.commands import CommandSupplier
     from vyxalbot2.reactions import Reactions
@@ -8,6 +10,8 @@ if TYPE_CHECKING:
 PinThat = object()
 
 class Service:
+    messageSignal = Signal()
+    editSignal = Signal()
     @classmethod
     async def create(cls, reactions: "Reactions", common: "CommonData") -> Self:
         raise NotImplementedError

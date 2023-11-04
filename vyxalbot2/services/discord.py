@@ -5,7 +5,7 @@ from asyncio import Event, get_event_loop
 import logging
 import inspect
 
-from discord import Client, Intents, Interaction, Object, TextChannel
+from discord import Client, Intents, Interaction, Message, Object, TextChannel
 from discord.app_commands import CommandTree, Command as DiscordCommand, Group, Choice, choices
 from vyxalbot2.commands import Command
 from vyxalbot2.commands.discord import DiscordCommands
@@ -27,11 +27,14 @@ class VBClient(Client):
         # which would be bad in any other situation but this, although even here it's not great
         # TL;DR I used the inspect to bamboozle the inspect
         async def wrapper(interaction: Interaction, *args, **kwargs):
+            assert interaction.channel_id is not None
             async for line in impl(
                 EventInfo(
                     "", # :(
                     interaction.user.display_name,
+                    interaction.user.display_avatar.url,
                     interaction.user.id,
+                    interaction.channel_id,
                     interaction.id,
                     service
                 ),
@@ -76,6 +79,7 @@ class VBClient(Client):
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
 
+
 class DiscordService(Service):
     @classmethod
     async def create(cls, reactions: Reactions, common: CommonData):
@@ -91,12 +95,9 @@ class DiscordService(Service):
         
         self.logger = logging.getLogger("DiscordService")
         self.client = client
+        self.client.event(self.on_message)
         self.common = common
         self.reactions = reactions
-
-        eventChannel = self.client.get_channel(self.common.privateConfig["discord"]["eventChannel"])
-        assert isinstance(eventChannel, TextChannel)
-        self.eventChannel = eventChannel
 
         for command in self.commands.commands.values():
             self.client.addCommand(self, command)
@@ -105,7 +106,21 @@ class DiscordService(Service):
         self.clientTask = get_event_loop().create_task(self.client.connect())
         await self.client.wait_until_ready()
         await self.client.tree.sync()
+        eventChannel = self.client.get_channel(self.common.privateConfig["discord"]["eventChannel"])
+        assert isinstance(eventChannel, TextChannel), str(eventChannel)
+        self.eventChannel = eventChannel
         self.logger.info(f"Discord connection established! We are {self.client.user}.")
+
+    async def on_message(self, message: Message):
+        await self.messageSignal.send_async(self, event=EventInfo(
+            content=message.content,
+            userName=message.author.display_name,
+            pfp=message.author.display_avatar.url,
+            roomIdent=message.channel.id,
+            userIdent=message.author.id,
+            messageIdent=message.id,
+            service=self
+        ))
 
     async def shutdown(self):
         self.clientTask.cancel()

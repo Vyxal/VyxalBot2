@@ -11,6 +11,7 @@ import codecs
 import base64
 import json
 import subprocess
+from discord import User
 
 from gidgethub import BadRequest, HTTPException as GitHubHTTPException, ValidationError
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
@@ -32,6 +33,7 @@ from vyxalbot2.services import PinThat, Service
 from vyxalbot2.services.se.parser import CommandParser, ParseError
 from vyxalbot2.types import CommonData, EventInfo, PrivateConfigType, PublicConfigType, MessagesType
 from vyxalbot2.userdb import UserDB
+from vyxalbot2.util import resolveChatPFP
 
 class SEService(Service):
     @classmethod
@@ -53,6 +55,8 @@ class SEService(Service):
         self.room = room
         self.common = common
         self.reactions = reactions
+
+        self.pfpCache: dict[int, str] = {}
 
         self.logger = logging.getLogger("SEService")
         self.logger.info(f"Connected to chat as user {room.userID}")
@@ -79,11 +83,22 @@ class SEService(Service):
     async def pin(self, message: int):
         await self.room.pin(message)
 
+    async def getPFP(self, user: int):
+        if user not in self.pfpCache:
+            async with ClientSession() as session:
+                async with session.get(
+                    f"https://chat.stackexchange.com/users/thumbs/{user}"
+                ) as response:
+                    self.pfpCache[user] = resolveChatPFP((await response.json())["email_hash"])
+        return self.pfpCache[user]
+
     async def onMessage(self, room: Room, message: MessageEvent):
         event = EventInfo(
             message.content,
             message.user_name,
+            await self.getPFP(message.user_id),
             message.user_id,
+            message.room_id,
             message.message_id,
             self
         )
@@ -92,6 +107,7 @@ class SEService(Service):
             return
         if message.user_id == self.room.userID:
             return
+        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
         if not message.content.startswith("!!/"):
             return
         sentAt = datetime.now()
@@ -107,23 +123,27 @@ class SEService(Service):
         self.editDB[message.message_id] = (sentAt, responseIDs)
 
     async def onEdit(self, room: Room, edit: EditEvent):
+        event = EventInfo(
+            edit.content,
+            edit.user_name,
+            await self.getPFP(edit.user_id),
+            edit.user_id,
+            edit.room_id,
+            edit.message_id,
+            self
+        )
         if edit.user_id == self.room.userID:
             return
+        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
         if not edit.content.startswith("!!/"):
             return
         if edit.message_id not in self.editDB:
             await self.onMessage(room, edit)
         else:
-            event = EventInfo(
-                edit.content,
-                edit.user_name,
-                edit.user_id,
-                edit.message_id,
-                self
-            )
             sentAt, idents = self.editDB[edit.message_id]
             if (datetime.now() - sentAt).seconds > (60 * 2): # margin of error
-                await self.onMessage(room, edit)
+                with self.messageSignal.muted():
+                    await self.onMessage(room, edit)
                 return
             response = [i async for i in self.processMessage(edit.content.removeprefix("!!/"), event)]
             if len(response):

@@ -15,10 +15,7 @@ from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.userdb import User
 from urllib.parse import urlparse, urlunparse
 
-from vyxalbot2.util import TRASH, extractMessageIdent, getMessageRange, getRoomOfMessage
-
-STACK_IMGUR = "i.stack.imgur.com"
-DEFAULT_PFP = "https://cdn-chat.sstatic.net/chat/img/anon.png"
+from vyxalbot2.util import TRASH, extractMessageIdent, getMessageRange, getRoomOfMessage, resolveChatPFP
 
 class SECommands(CommonCommands):
     def __init__(self, room: Room, common: CommonData, service: "SEService"):
@@ -38,15 +35,6 @@ class SECommands(CommonCommands):
             else:
                 help[baseName] = [command.fullHelp]
         return help
-
-    def resolveChatPFP(self, pfp: str):
-        if pfp.startswith("!"):
-            pfp = pfp.removeprefix("!")
-            url = urlparse(pfp)
-            if url.netloc == STACK_IMGUR:
-                return urlunparse(("https", STACK_IMGUR, url.path, "", "s=256", ""))
-            return pfp
-        return f"https://www.gravatar.com/avatar/{pfp}?s=256&d=identicon&r=PG"
 
     async def helpCommand(self, event: EventInfo, command: str = ""):
         """Provide help for a command."""
@@ -137,7 +125,7 @@ class SECommands(CommonCommands):
             self.service,
             thumb["id"],
             thumb["name"],
-            self.resolveChatPFP(thumb["email_hash"])
+            resolveChatPFP(thumb["email_hash"])
         )
         yield "You have been registered! You don't have any permisssions yet."
 
@@ -153,7 +141,7 @@ class SECommands(CommonCommands):
             ) as response:
                 thumb = await response.json()
         user.name = thumb["name"]
-        user.pfp = self.resolveChatPFP(thumb["email_hash"])
+        user.pfp = resolveChatPFP(thumb["email_hash"])
         await self.userDB.save(user)
         yield "Your details have been updated."
 

@@ -35,6 +35,7 @@ from dateutil.parser import parse as parseDatetime
 from uwuivy import uwuipy
 from discord.utils import setup_logging
 from motor.motor_asyncio import AsyncIOMotorClient
+from vyxalbot2.bridge import DiscordBridge
 from vyxalbot2.commands.common import CommonCommands
 
 from vyxalbot2.github import GitHubApplication
@@ -70,6 +71,7 @@ class VyxalBot2:
         userDB = UserDB(AsyncIOMotorClient(self.privateConfig["mongoUrl"]), self.privateConfig["database"])
 
         ghApp = GitHubApplication(self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.privateConfig["webhookSecret"])
+        reactions = Reactions(self.messages)
 
         common = CommonData(
             self.statuses,
@@ -81,9 +83,10 @@ class VyxalBot2:
             userDB,
             ghApp
         )
-        reactions = Reactions(self.messages)
         self.se = await SEService.create(reactions, common)
         self.discord = await DiscordService.create(reactions, common)
+        bridge = DiscordBridge(self.se, self.discord, self.discord.client.guilds[0], common)
+        await bridge.start()
         ghApp.services.append(self.se)
         ghApp.services.append(self.discord)
 

@@ -32,6 +32,7 @@ class DiscordConfigType(TypedDict):
     token: str
     guild: int
     eventChannel: int
+    bridgeChannel: int
 
 class PrivateConfigType(TypedDict):
     port: int
@@ -100,6 +101,8 @@ class CommonData:
 class EventInfo:
     content: str
     userName: str
+    pfp: str
+    roomIdent: int
     userIdent: int
     messageIdent: int
     service: "Service"
