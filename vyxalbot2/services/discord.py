@@ -119,7 +119,7 @@ class DiscordService(Service):
         self.logger.info(f"Discord connection established! We are {self.client.user}.")
 
     async def on_message(self, message: Message):
-        await self.messageSignal.send_async(self, event=EventInfo(
+        event = EventInfo(
             content=message.content,
             userName=message.author.display_name,
             pfp=message.author.display_avatar.url,
@@ -127,7 +127,13 @@ class DiscordService(Service):
             userIdent=message.author.id,
             messageIdent=message.id,
             service=self
-        ))
+        )
+        await self.messageSignal.send_async(self, event=event)
+        channel = self.client.get_channel(message.channel.id)
+        if not isinstance(channel, TextChannel):
+            return
+        async for line in self.reactions.onMessage(self, event):
+            await channel.send(line)
 
     async def shutdown(self):
         self.clientTask.cancel()
