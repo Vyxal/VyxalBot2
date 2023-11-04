@@ -133,8 +133,8 @@ class DiscordService(Service):
         self.clientTask.cancel()
         await self.clientTask
 
-    async def send(self, message: str):
-        return (await self.eventChannel.send(message)).id
+    async def send(self, message: str, **kwargs):
+        return (await self.eventChannel.send(message, suppress_embeds=kwargs.get("discordSuppressEmbeds", False))).id
 
     async def pin(self, message: int):
         await self.eventChannel.get_partial_message(message).pin()

@@ -77,7 +77,7 @@ class SEService(Service):
     async def shutdown(self):
         await self.bot.shutdown()
 
-    async def send(self, message: str):
+    async def send(self, message: str, **kwargs):
         return await self.room.send(message)
 
     async def pin(self, message: int):

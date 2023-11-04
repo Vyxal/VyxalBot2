@@ -28,7 +28,7 @@ def wrap(fun):
                 if line == PinThat:
                     await service.pin(ids[-1])
                     continue
-                ids.append(await service.send(line))
+                ids.append(await service.send(line, discordSuppressEmbeds=True))
     return wrapper
 
 class GitHubApplication(Application):
