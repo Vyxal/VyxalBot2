@@ -1,6 +1,9 @@
 from logging import getLogger
+
 from aiohttp import ClientSession
-from discord import Client, Guild, TextChannel
+from discord import Guild, TextChannel
+from markdownify import markdownify
+
 from vyxalbot2.services import Service
 from vyxalbot2.services.discord import DiscordService
 from vyxalbot2.types import CommonData, EventInfo
@@ -43,7 +46,7 @@ class DiscordBridge:
         if self.webhook is None:
             self.logger.warning(f"Dropping message {event.messageIdent}, webhook isn't ready yet")
             return
-        await self.webhook.send(event.content, username=event.userName, avatar_url=event.pfp)
+        await self.webhook.send(markdownify(event.content), username=event.userName, avatar_url=event.pfp)
 
     async def onDiscordMessage(self, sender, event: EventInfo, directedAtUs: bool = False):
         assert self.discord.client.user is not None
