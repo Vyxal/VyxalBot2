@@ -39,7 +39,7 @@ class Reactions:
 
     async def runCommand(self, service: Service, name: str, event: EventInfo, *args):
         async for line in service.invokeCommand(name, event, *args):
-            await service.send(line)
+            yield line
 
     async def onMessage(self, service: Service, event: EventInfo):
         didSomething = False
@@ -51,36 +51,41 @@ class Reactions:
             if reMatch is not None:
                 if event.userIdent == event.service.clientIdent and function not in OK_TO_SELF_REPLY:
                     continue
-                await getattr(self, function)(service, event, reMatch)
-                didSomething = True
-        return didSomething
+                async for line in getattr(self, function)(service, event, reMatch):
+                    yield line
 
     async def info(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "info", event)
+        async for line in self.runCommand(service, "info", event):
+            yield line
 
     async def cookie(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "cookie", event)
+        async for line in self.runCommand(service, "cookie", event):
+            yield line
 
     async def coffee(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "coffee", event)
+        async for line in self.runCommand(service, "coffee", event):
+            yield line
 
     async def maul(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "maul", event, reMatch.group("user"))
+        async for line in self.runCommand(service, "maul", event):
+            yield line
 
     async def sus(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "sus", event)
+        async for line in self.runCommand(service, "sus", event):
+            yield line
 
     async def blame(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await self.runCommand(service, "blame", event)
+        async for line in self.runCommand(service, "blame", event):
+            yield line
 
     async def goodBot(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await service.send(":3")
+        yield ":3"
 
     async def hello(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await service.send(random.choice(self.messages["hello"]))
+        yield random.choice(self.messages["hello"])
 
     async def goodbye(self, service: Service, event: EventInfo, reMatch: re.Match):
-        await service.send(random.choice(self.messages["goodbye"]))
+        yield random.choice(self.messages["goodbye"])
 
     async def mojo(self, service: Service, event: EventInfo, reMatch: re.Match):
         emojis = [
@@ -89,5 +94,4 @@ class Reactions:
             "🔥" * random.randint(1, 10),
         ]
         random.shuffle(emojis)
-        emojis = "".join(emojis) + ("😳" * (random.randint(1, 10) == 1))
-        await service.send(emojis)
+        yield "".join(emojis) + ("😳" * (random.randint(1, 10) == 1))
