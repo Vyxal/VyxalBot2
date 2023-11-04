@@ -135,6 +135,7 @@ class DiscordService(Service):
                 return
             for line in reactions:
                 await channel.send(line)
+            return
         await self.messageSignal.send_async(self, event=event)
 
 
