@@ -54,7 +54,7 @@ class CommandSupplier:
             if not attr.__name__.lower().endswith("command"):
                 continue
             if attr.__doc__ is None:
-                continue
+                attr.__doc__ = "…"
             name = re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__.removesuffix("Command"))
             commands[name] = Command(name, attr.__doc__, attr)
         
