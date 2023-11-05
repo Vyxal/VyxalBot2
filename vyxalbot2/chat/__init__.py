@@ -30,7 +30,7 @@ from vyxalbot2.types import EventInfo
 from ..types import AppToken, PrivateConfigType, PublicConfigType, MessagesType
 from .parser import CommandParser, ParseError
 from ..userdb import UserDB
-from ..util import RAPTOR
+from ..util import RAPTOR, TRASH, extractMessageIdent, getMessageRange, getRoomOfMessage
 
 class Chat:
     def __init__(self, room: Room, userDB: UserDB, ghClient: GitHubApplication, session: ClientSession, publicConfig: PublicConfigType, privateConfig: PrivateConfigType, messages: MessagesType, statuses: list[str]):
@@ -448,6 +448,42 @@ class Chat:
             },
             oauth_token=await self.ghClient.appToken(),
         )
+
+    async def deliterateifyCommand(self, event: EventInfo, code: str):
+        """Convert literate code to sbcs"""
+        async with self.session.post(self.privateConfig["tyxalInstance"] + "/deliterateify", data=code) as response:
+            if response.status == 400:
+                yield f"Failed to illiterateify: {await response.text()}"
+            elif response.status == 200:
+                yield f"`{await response.text()}`"
+            else:
+                yield f"Tyxal sent back an error response! ({response.status})"
+    # Add an alias
+    async def delitCommand(self, event: EventInfo, code: str):
+        async for line in self.deliterateifyCommand(event, code):
+            yield line
+      
+    async def trashCommand(self, event: EventInfo, startRaw: str, endRaw: str, target: int = TRASH):
+        """Move messages to a room (defaults to Trash)."""
+        start = extractMessageIdent(startRaw)
+        end = extractMessageIdent(endRaw)
+        if start is None:
+            yield "Malformed start id"
+            return
+        if end is None:
+            yield "Malformed end id"
+            return
+        # Sanity check: make sure the messages are actually in our room
+        if (await getRoomOfMessage(self.session, start)) != self.privateConfig["chat"]["room"]:
+            yield "Start message does not exist or is not in this room"
+            return
+        if (await getRoomOfMessage(self.session, start)) != self.privateConfig["chat"]["room"]:
+            yield "End message does not exist or is not in this room"
+            return
+        # Dubious code to figure out the range of messages we're dealing with
+        identRange = [i async for i in getMessageRange(self.session, self.privateConfig["chat"]["room"], start, end)]
+        await self.room.moveMessages(identRange, target)
+        yield f"Moved {len(identRange)} messages successfully."
 
     async def pullCommand(self, event: EventInfo):
         """Pull changes and restart."""
