@@ -501,6 +501,6 @@ class Chat:
         else:
             yield f"Commit: {result.stdout.decode('utf-8').strip()}"
 
-    async def spamtonCommand(self, event: eventInfo):
+    async def spamtonCommand(self, event: EventInfo):
         """All I know is that it is related to spam, PLEASE DON'T DO ANYTHING TO ME, ALL I KNOW IS THIS, I PROMISE!"""
         yield random.choice(["IT'S EV3RY BUDDY 'S FAVORITE [[Number 1 Rated SalesmanChatbot1997]]", "YOU WANT [[Hyperlink Blocked]], DON'T YOU.", "KID!!! IN BUSINESS YOU NEED TO SAY YOU'RE INTERESTED!!!", "MEET LOCAL SINGLES STRAIGHT FROM [My]", "IF YOU'VE [[Lost Control Of Your Life]] THEN YOU JUST GOTTA GRAB IT BY THE [[Silly Strings]]", "DON'T FORGET TO [Star This Message] FOR MORE [Hyperlink Blocked]!"])
