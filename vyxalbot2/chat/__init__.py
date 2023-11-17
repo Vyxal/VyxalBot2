@@ -18,7 +18,7 @@ from sechat import EventType
 from tinydb.table import Document
 from sechat.room import Room
 from sechat.events import MessageEvent, EditEvent
-from uwuivy import uwuipy
+from uwuipy import uwuipy
 
 import yaml
 import logging
