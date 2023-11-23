@@ -389,7 +389,7 @@ class Chat:
         except BadRequest as e:
             yield f"Failed to open issue: {e.args}"
 
-    async def issueCloseCommand(self, event: EventInfo, repo: str, num: int, body: str):
+    async def issueCloseCommand(self, event: EventInfo, repo: str, num: int, body: str = None):
         """Close an issue in a repository."""
         
         body = body + (
