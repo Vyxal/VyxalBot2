@@ -391,20 +391,21 @@ class Chat:
 
     async def issueCloseCommand(self, event: EventInfo, repo: str, num: int, body: str = None):
         """Close an issue in a repository."""
-        
-        body = body + (
-            f"\n\n_Issue closed by {event.userName} [here]"
-            f'(https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'
-            "_"
-        )
 
-        try:
-            await self.ghClient.gh.post(
-                f"/repos/{self.privateConfig['account']}/{repo}/issues/{num}/comments",
-                data={'body': body}
+        if not body == None:
+            body = body + (
+                f"\n\n_Issue closed by {event.userName} [here]"
+                f'(https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'
+                "_"
             )
-        except BadRequest as e:
-            yield f"Failed to close issue: {e.args}"
+
+            try:
+                await self.ghClient.gh.post(
+                    f"/repos/{self.privateConfig['account']}/{repo}/issues/{num}/comments",
+                    data={'body': body}
+                )
+            except BadRequest as e:
+                yield f"Failed to close issue: {e.args}"
 
         try:
             await self.ghClient.gh.patch(
