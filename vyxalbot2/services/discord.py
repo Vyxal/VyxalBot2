@@ -120,6 +120,8 @@ class DiscordService(Service):
         self.logger.info(f"Discord connection established! We are {self.client.user}.")
 
     async def on_message(self, message: Message):
+        if message.author.discriminator == "0000":
+            return
         event = EventInfo(
             content=message.content,
             userName=message.author.display_name,
