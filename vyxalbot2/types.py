@@ -27,6 +27,7 @@ class ChatConfigType(TypedDict):
     room: int
     email: str
     password: str
+    ignore: list[int]
 
 class DiscordConfigType(TypedDict):
     token: str

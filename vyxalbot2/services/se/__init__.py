@@ -106,6 +106,8 @@ class SEService(Service):
         )
         if message.user_id == self.room.userID:
             return
+        if message.user_id in self.common.privateConfig["chat"]["ignore"]:
+            return
         reactions = [i async for i in self.reactions.onMessage(self, event)]
         if len(reactions):
             await self.commandRequestSignal.send_async(self, event=event)

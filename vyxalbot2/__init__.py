@@ -70,7 +70,7 @@ class VyxalBot2:
         userDB = UserDB(AsyncIOMotorClient(self.privateConfig["mongoUrl"]), self.privateConfig["database"])
 
         ghApp = GitHubApplication(self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.privateConfig["webhookSecret"])
-        reactions = Reactions(self.messages)
+        reactions = Reactions(self.messages, self.privateConfig["chat"]["ignore"])
 
         common = CommonData(
             self.statuses,

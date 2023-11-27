@@ -34,8 +34,9 @@ MESSAGE_REGEXES: dict[str, str] = dict(
 )
 
 class Reactions:
-    def __init__(self, messages: MessagesType):
+    def __init__(self, messages: MessagesType, ignore: list[int]):
         self.messages = messages
+        self.ignore = ignore
 
     async def runCommand(self, service: Service, name: str, event: EventInfo, *args):
         async for line in service.invokeCommand(name, event, *args):
@@ -50,6 +51,8 @@ class Reactions:
                 reMatch = re.fullmatch(regex, event.content.lower())
             if reMatch is not None:
                 if event.userIdent == event.service.clientIdent and function not in OK_TO_SELF_REPLY:
+                    continue
+                if event.userIdent in self.ignore:
                     continue
                 async for line in getattr(self, function)(service, event, reMatch):
                     yield line
