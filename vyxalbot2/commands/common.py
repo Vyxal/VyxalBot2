@@ -13,7 +13,7 @@ from discord import Status
 from vyxalbot2.commands import CommandSupplier
 from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.util import RAPTOR
-from uwuivy import uwuipy
+from uwuipy import uwuipy
 
 class StatusMood(Enum):
     MESSAGE = "message"

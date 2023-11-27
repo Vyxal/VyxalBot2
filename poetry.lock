@@ -1147,19 +1147,15 @@ files = [
 ]
 
 [[package]]
-name = "uwuivy"
-version = "0.1.0"
+name = "uwuipy"
+version = "0.1.7"
 description = "Allows the easy implementation of uwuifying words for applications like Discord bots and websites"
 optional = false
-python-versions = "^3.10"
-files = []
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/Vyxal/uwuivy.git"
-reference = "v0.1.0"
-resolved_reference = "0284e97d92043e775aba88ae442f4e275fc52e73"
+python-versions = ">=3.10,<4.0"
+files = [
+    {file = "uwuipy-0.1.7-py3-none-any.whl", hash = "sha256:db26b361e4466c85ae06fe1a663ce77167e16993c9e848511cd49f74107ff1e8"},
+    {file = "uwuipy-0.1.7.tar.gz", hash = "sha256:94915fbb5f897ab9532d5d39e7e4b726fd8da8c3352efcfb1c1df98a5cf9ec04"},
+]
 
 [[package]]
 name = "websockets"
@@ -1329,4 +1325,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "d883922e616524da85bea31e7c8b3256ef92506fb72312b5a72ea7ecf8ec02b7"
+content-hash = "2989681acadae96789f699dbadf7345cc7ccd63cd9897ba01b40e406aa264bab"
