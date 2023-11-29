@@ -191,6 +191,30 @@ class GitHubApplication(Application):
                 if user == event.data["sender"]["login"]:
                     user = formatUser(event.data["sender"])
                 yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commits[-1]['message'].splitlines()[0]}"
+        verb = "force-push" if event.data["forced"] else "push"
+        if len(event.data["commits"]) <= 5:
+            for commit in event.data["commits"]:
+                if not commit["distinct"]:
+                    continue
+                if event.data["pusher"]["name"] == event.data["sender"]["login"]:
+                    user = formatUser(event.data["sender"])
+                else:
+                    user = event.data["pusher"]["name"]
+                yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
+        else:
+            counter = Counter()
+            userCommits = defaultdict(lambda: [])
+            for commit in event.data["commits"]:
+                if not commit["distinct"]:
+                    continue
+                name = event.data["pusher"]["name"]
+                counter[name] += 1
+                userCommits[name].append(commit)
+            for user, count in counter.items():
+                commits = userCommits[user]
+                if user == event.data["sender"]["login"]:
+                    user = formatUser(event.data["sender"])
+                yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commits[-1]['message'].splitlines()[0]}"
 
     @wrap
     async def onIssueAction(self, event: GitHubEvent):
