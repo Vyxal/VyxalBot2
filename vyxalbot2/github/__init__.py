@@ -1,22 +1,23 @@
-import re
+from typing import Optional
+from collections import Counter, defaultdict
 from time import time
 
-from typing import Optional
+import re
+
 from aiohttp import ClientSession
-from aiohttp.web import Application, Request, Response, run_app
+from aiohttp.web import Application, Request, Response
 from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
 from gidgethub.routing import Router
 from gidgethub.sansio import Event as GitHubEvent
-from gidgethub.apps import get_installation_access_token, get_jwt
+from gidgethub.apps import get_installation_access_token
 from dateutil.parser import parse as parseDatetime
 from cachetools import LRUCache
-import jwt
-from sechat import Room
 from vyxalbot2.services import PinThat, Service
 
-from vyxalbot2.types import AppToken, PublicConfigType
+import jwt
 
-from .formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
+from vyxalbot2.types import AppToken, PublicConfigType
+from vyxalbot2.github.formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 def wrap(fun):
@@ -167,14 +168,30 @@ class GitHubApplication(Application):
         ):
             return
         branch = "/".join(event.data["ref"].split("/")[2:])
-        for commit in event.data["commits"]:
-            if not commit["distinct"]:
-                continue
-            if event.data["pusher"]["name"] == event.data["sender"]["login"]:
-                user = formatUser(event.data["sender"])
-            else:
-                user = event.data["pusher"]["name"]
-            yield f"{user} {'force-pushed' if event.data['forced'] else 'pushed'} a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
+        verb = "force-push" if event.data["forced"] else "push"
+        if len(event.data["commits"]) <= 5:
+            for commit in event.data["commits"]:
+                if not commit["distinct"]:
+                    continue
+                if event.data["pusher"]["name"] == event.data["sender"]["login"]:
+                    user = formatUser(event.data["sender"])
+                else:
+                    user = event.data["pusher"]["name"]
+                yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
+        else:
+            counter = Counter()
+            userCommits = defaultdict(lambda: [])
+            for commit in event.data["commits"]:
+                if not commit["distinct"]:
+                    continue
+                name = event.data["pusher"]["name"]
+                counter[name] += 1
+                userCommits[name].append(commit)
+            for user, count in counter.items():
+                commits = userCommits[user]
+                if user == event.data["sender"]["login"]:
+                    user = formatUser(event.data["sender"])
+                yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commits[-1]['message'].splitlines()[0]}"
 
     @wrap
     async def onIssueAction(self, event: GitHubEvent):
