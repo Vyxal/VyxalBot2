@@ -1,6 +1,6 @@
 from typing import Self, TYPE_CHECKING
 
-from blinker import Namespace, Signal
+from blinker import Signal
 
 if TYPE_CHECKING:
     from vyxalbot2.commands import CommandSupplier

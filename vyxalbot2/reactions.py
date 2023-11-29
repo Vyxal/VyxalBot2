@@ -1,14 +1,11 @@
-import random
-import typing
-import re
-
 from itertools import chain, repeat
 
-from vyxalbot2.services import Service
+import random
+import re
 
+from vyxalbot2.services import Service
 from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
-from vyxalbot2.util import RAPTOR
 
 OK_TO_SELF_REPLY = ["sus"]
 DO_NOT_IGNORE_COMMAND_PREFIX = ["sus"]
@@ -43,7 +40,6 @@ class Reactions:
             yield line
 
     async def onMessage(self, service: Service, event: EventInfo):
-        didSomething = False
         for regex, function in MESSAGE_REGEXES.items():
             if function not in DO_NOT_IGNORE_COMMAND_PREFIX:
                 reMatch = re.fullmatch(regex, event.content.lower().removeprefix("!!/"))

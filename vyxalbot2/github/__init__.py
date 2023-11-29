@@ -12,10 +12,9 @@ from gidgethub.sansio import Event as GitHubEvent
 from gidgethub.apps import get_installation_access_token
 from dateutil.parser import parse as parseDatetime
 from cachetools import LRUCache
+from jwt import encode as encodeJwt
+
 from vyxalbot2.services import PinThat, Service
-
-import jwt
-
 from vyxalbot2.types import AppToken, PublicConfigType
 from vyxalbot2.github.formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
@@ -68,7 +67,7 @@ class GitHubApplication(Application):
         # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
         time_int = int(time())
         payload = {"iat": time_int - 60, "exp": time_int + (7 * 60), "iss": app_id}
-        bearer_token = jwt.encode(payload, private_key, algorithm="RS256")
+        bearer_token = encodeJwt(payload, private_key, algorithm="RS256")
 
         return bearer_token
 

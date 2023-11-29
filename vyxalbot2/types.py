@@ -1,5 +1,4 @@
-from typing import Any, AsyncGenerator, Callable, Optional, TypedDict, TYPE_CHECKING
-from enum import Enum, auto
+from typing import Any, AsyncGenerator, Callable, TypedDict, TYPE_CHECKING
 from datetime import datetime
 from dataclasses import dataclass
 

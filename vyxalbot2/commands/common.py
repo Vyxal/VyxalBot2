@@ -1,6 +1,5 @@
 from datetime import datetime
 from enum import Enum
-from imaplib import Commands
 from string import ascii_letters
 
 import codecs
@@ -8,12 +7,11 @@ import random
 import subprocess
 
 from aiohttp import ClientSession
-from discord import Status
+from uwuipy import uwuipy
 
 from vyxalbot2.commands import CommandSupplier
 from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.util import RAPTOR
-from uwuipy import uwuipy
 
 class StatusMood(Enum):
     MESSAGE = "message"

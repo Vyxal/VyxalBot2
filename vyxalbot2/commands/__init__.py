@@ -6,7 +6,6 @@ from typing import Any, AsyncGenerator, Callable, Self
 import re
 import inspect
 
-
 from vyxalbot2.types import EventInfo
 
 class Command(dict[str, Self]):

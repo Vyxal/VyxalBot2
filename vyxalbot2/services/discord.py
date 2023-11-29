@@ -1,13 +1,14 @@
-import random
 from asyncio import get_event_loop
 
 import logging
 import inspect
 import re
+import random
 
-from discord import Client, CustomActivity, Game, Intents, Interaction, Message, Object, TextChannel
+from discord import Client, Game, Intents, Interaction, Message, Object, TextChannel
 from discord.app_commands import CommandTree, Command as DiscordCommand, Group
 from discord.ext.tasks import loop
+
 from vyxalbot2.commands import Command
 from vyxalbot2.commands.discord import DiscordCommands
 from vyxalbot2.services import Service

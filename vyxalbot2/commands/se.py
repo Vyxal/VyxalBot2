@@ -8,13 +8,12 @@ import yaml
 from aiohttp import ClientSession
 from gidgethub import BadRequest, ValidationError, HTTPException as GitHubHTTPException
 from sechat import Room
+
 if TYPE_CHECKING:
     from vyxalbot2.services.se import SEService
 from vyxalbot2.commands.common import CommonCommands
 from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.userdb import User
-from urllib.parse import urlparse, urlunparse
-
 from vyxalbot2.util import TRASH, extractMessageIdent, getMessageRange, getRoomOfMessage, resolveChatPFP
 
 class SECommands(CommonCommands):

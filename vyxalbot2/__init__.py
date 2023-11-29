@@ -1,48 +1,23 @@
-import asyncio
-from typing import Optional, cast, Any
-from time import time
+from typing import cast, Any
 from datetime import datetime
 from pathlib import Path
-from asyncio import create_task, wait_for
-from html import unescape
-from string import ascii_letters
 
 import logging
-import sys
 import json
 import os
-import random
-import re
-import codecs
-import base64
-import subprocess
 
-import tomli
-import yaml
-
-from aiohttp import ClientSession
-from aiohttp.web import Application, Request, Response, run_app
-from aiohttp.client_exceptions import ContentTypeError
-from sechat import Bot, Room, MessageEvent, EventType
-from gidgethub import HTTPException as GitHubHTTPException, ValidationError
-from gidgethub.aiohttp import GitHubAPI as AsyncioGitHubAPI
-from gidgethub.abc import GitHubAPI
-from gidgethub.routing import Router
-from gidgethub.sansio import Event as GitHubEvent
-from gidgethub.apps import get_installation_access_token, get_jwt
-from cachetools import LRUCache
-from dateutil.parser import parse as parseDatetime
-from uwuipy import uwuipy
+from aiohttp.web import run_app
 from discord.utils import setup_logging
 from motor.motor_asyncio import AsyncIOMotorClient
-from vyxalbot2.commands.common import CommonCommands
+
+import tomli
 
 from vyxalbot2.github import GitHubApplication
 from vyxalbot2.reactions import Reactions
-from vyxalbot2.services.discord import DiscordService, VBClient
+from vyxalbot2.services.discord import DiscordService
 from vyxalbot2.services.se import SEService
 from vyxalbot2.userdb import UserDB
-from vyxalbot2.types import CommonData, PublicConfigType, PrivateConfigType, MessagesType, AppToken
+from vyxalbot2.types import CommonData, PublicConfigType, PrivateConfigType, MessagesType
 
 __version__ = "2.0.0"
 

@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import cast
+from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 
 import random
@@ -13,7 +13,6 @@ from sechat.events import MessageEvent, EditEvent
 from markdownify import MarkdownConverter
 
 from vyxalbot2.commands.se import SECommands
-
 from vyxalbot2.reactions import Reactions
 from vyxalbot2.services import PinThat, Service
 from vyxalbot2.services.se.parser import CommandParser, ParseError

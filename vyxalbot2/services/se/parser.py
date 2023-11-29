@@ -1,11 +1,6 @@
-from typing import Any, Callable
 from enum import Enum, auto
 from string import digits, ascii_letters
-
 from inspect import signature
-
-from sechat.room import Room
-from sechat.events import MessageEvent
 
 from vyxalbot2.commands import Command
 
