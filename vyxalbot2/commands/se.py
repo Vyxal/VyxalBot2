@@ -194,6 +194,29 @@ class SECommands(CommonCommands):
         except BadRequest as e:
             yield f"Failed to open issue: {e.args}"
 
+    async def issueCloseCommand(self, event: EventInfo, repo: str, num: int, body: str=""):
+        """Close an issue in a repository."""
+        if body:
+            body = body + (
+                f"\n\n_Issue closed by {event.userName} [here]"
+                f'(https://chat.stackexchange.com/transcript/{self.room.roomID}?m={event.messageIdent}#{event.messageIdent})'
+                "_"
+            )
+            try:
+                await self.common.ghClient.gh.post(
+                    f"/repos/{self.common.privateConfig['account']}/{repo}/issues/{num}/comments",
+                    data={"body": body}
+                )
+            except BadRequest as e:
+                yield f"Failed to send comment: {e.args}"
+        try:
+            await self.common.ghClient.gh.patch(
+                f"/repos/{self.common.privateConfig['account']}/{repo}/issues/{num}",
+                data={"state": "closed"}
+            )
+        except BadRequest as e:
+            yield f"Failed to close issue: {e.args}"
+
     async def prodCommand(self, event: EventInfo, repo: str = ""):
         """Open a PR to update production."""
         if len(repo) == 0:
