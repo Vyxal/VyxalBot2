@@ -28,8 +28,7 @@ def wrap(fun):
                 if line == PinThat:
                     await service.pin(ids[-1])
                     continue
-                # ZWJ so Bridget ignores it
-                ids.append(await service.send("\u200d" + line, discordSuppressEmbeds=True))
+                ids.append(await service.send(line, discordSuppressEmbeds=True))
     return wrapper
 
 class GitHubApplication(Application):
