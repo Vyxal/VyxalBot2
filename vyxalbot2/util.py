@@ -1,13 +1,28 @@
+from urllib.parse import urlparse, urlunparse
+
 import re
 
 from aiohttp import ClientSession
 
 import bs4
 
+
 GITHUB_MERGE_QUEUE = "github-merge-queue[bot]"
 TRASH = 82806
 
 LINK_REGEX = r"https?://chat.stackexchange.com/transcript(/message)?/(?P<ident>\d+)(#.*)?"
+
+STACK_IMGUR = "i.stack.imgur.com"
+DEFAULT_PFP = "https://cdn-chat.sstatic.net/chat/img/anon.png"
+
+def resolveChatPFP(pfp: str):
+    if pfp.startswith("!"):
+        pfp = pfp.removeprefix("!")
+        url = urlparse(pfp)
+        if url.netloc == STACK_IMGUR:
+            return urlunparse(("https", STACK_IMGUR, url.path, "", "s=256", ""))
+        return pfp
+    return f"https://www.gravatar.com/avatar/{pfp}?s=256&d=identicon&r=PG"
 
 def extractMessageIdent(ident: str):
     if ident.isdigit():
