@@ -175,7 +175,11 @@ class GitHubApplication(Application):
                     user = formatUser(event.data["sender"])
                 else:
                     user = event.data["pusher"]["name"]
-                yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commit['message'].splitlines()[0]}"
+                if len(commit["message"]) < 1:
+                    message = "(no title)"
+                else:
+                    message = commit['message'].splitlines()[0]
+                yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
         else:
             counter = Counter()
             userCommits = defaultdict(lambda: [])
@@ -189,7 +193,11 @@ class GitHubApplication(Application):
                 commits = userCommits[user]
                 if user == event.data["sender"]["login"]:
                     user = formatUser(event.data["sender"])
-                yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {commits[-1]['message'].splitlines()[0]}"
+                if len(commits[-1]["message"]) < 1:
+                    message = "(no title)"
+                else:
+                    message = commits[-1]['message'].splitlines()[0]
+                yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
 
     @wrap
     async def onIssueAction(self, event: GitHubEvent):
