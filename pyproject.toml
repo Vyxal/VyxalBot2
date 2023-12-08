@@ -6,7 +6,7 @@ authors = ["GingerIndustries <75683114+gingerindustries@users.noreply.github.com
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 gidgethub = "^5.2.1"
 sechat = { git = "https://github.com/GingerIndustries/sechat.git", branch = "v2" }
 cachetools = "^5.3.1"
