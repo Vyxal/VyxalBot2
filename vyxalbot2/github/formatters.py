@@ -8,8 +8,10 @@ def msgify(text):
         .replace("`", r"\`")
     )
 
+
 def linkify(text):
     return msgify(str(text)).replace("[", "\\[").replace("]", "\\]")
+
 
 def formatUser(user: dict) -> str:
     return f'[{linkify(user["login"])}]({user["html_url"]})'

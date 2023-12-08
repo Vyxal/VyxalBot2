@@ -10,10 +10,13 @@ import bs4
 GITHUB_MERGE_QUEUE = "github-merge-queue[bot]"
 TRASH = 82806
 
-LINK_REGEX = r"https?://chat.stackexchange.com/transcript(/message)?/(?P<ident>\d+)(#.*)?"
+LINK_REGEX = (
+    r"https?://chat.stackexchange.com/transcript(/message)?/(?P<ident>\d+)(#.*)?"
+)
 
 STACK_IMGUR = "i.stack.imgur.com"
 DEFAULT_PFP = "https://cdn-chat.sstatic.net/chat/img/anon.png"
+
 
 def resolveChatPFP(pfp: str):
     if pfp.startswith("!"):
@@ -24,6 +27,7 @@ def resolveChatPFP(pfp: str):
         return pfp
     return f"https://www.gravatar.com/avatar/{pfp}?s=256&d=identicon&r=PG"
 
+
 def extractMessageIdent(ident: str):
     if ident.isdigit():
         return int(ident)
@@ -32,8 +36,11 @@ def extractMessageIdent(ident: str):
     else:
         return None
 
+
 async def getRoomOfMessage(session: ClientSession, ident: int):
-    async with session.get(f"https://chat.stackexchange.com/transcript/message/{ident}") as response:
+    async with session.get(
+        f"https://chat.stackexchange.com/transcript/message/{ident}"
+    ) as response:
         if response.status != 200:
             return None
         # may the lord have mercy on my soul
@@ -43,20 +50,20 @@ async def getRoomOfMessage(session: ClientSession, ident: int):
         assert isinstance(href := link.get("href"), str)
         return int(href.removeprefix("/").removesuffix("/").split("/")[1])
 
+
 async def getMessageRange(session: ClientSession, room: int, start: int, end: int):
     before = end
     yield end
     while True:
-        async with session.post(f"https://chat.stackexchange.com/chats/{room}/events", data={
-            "before": str(before),
-            "mode": "Messages",
-            "msgCount": 500
-        }) as response:
-            data = (await response.json())
+        async with session.post(
+            f"https://chat.stackexchange.com/chats/{room}/events",
+            data={"before": str(before), "mode": "Messages", "msgCount": 500},
+        ) as response:
+            data = await response.json()
             events = data["events"]
             idents: list[int] = [event["message_id"] for event in events]
             if start in idents:
-                for ident in reversed(idents[idents.index(start):]):
+                for ident in reversed(idents[idents.index(start) :]):
                     yield ident
                 break
             for ident in reversed(idents):

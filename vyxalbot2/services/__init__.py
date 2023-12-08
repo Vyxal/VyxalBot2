@@ -9,11 +9,13 @@ if TYPE_CHECKING:
 
 PinThat = object()
 
+
 class Service:
     messageSignal = Signal()
     editSignal = Signal()
     commandRequestSignal = Signal()
     commandResponseSignal = Signal()
+
     @classmethod
     async def create(cls, reactions: "Reactions", common: "CommonData") -> Self:
         raise NotImplementedError
@@ -25,6 +27,7 @@ class Service:
 
     async def startup(self):
         pass
+
     async def shutdown(self):
         pass
 

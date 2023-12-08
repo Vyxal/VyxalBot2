@@ -4,12 +4,14 @@ from inspect import signature
 
 from vyxalbot2.commands import Command
 
+
 class ParseState(Enum):
     TOPLEVEL = auto()
     FLAG = auto()
     STRING = auto()
     NUMBER = auto()
     STRARRAY = auto()
+
 
 class TokenType(Enum):
     FLAG = auto()
@@ -19,17 +21,20 @@ class TokenType(Enum):
     STRARRAY = auto()
     ERROR = auto()
 
+
 TYPES_TO_TOKENS = {
     int: TokenType.INT,
     float: TokenType.FLOAT,
     str: TokenType.STRING,
-    list[str]: TokenType.STRARRAY
+    list[str]: TokenType.STRARRAY,
 }
+
 
 class ParseError(Exception):
     def __init__(self, message: str):
         super().__init__()
         self.message = message
+
 
 class CommandParser:
     def __init__(self, commands: dict[str, Command]):
@@ -135,7 +140,9 @@ class CommandParser:
                             stack.append([])
                             break
                         elif char == "]":
-                            yield TokenType.STRARRAY, ["".join(i) for i in stack if len(i)]
+                            yield TokenType.STRARRAY, [
+                                "".join(i) for i in stack if len(i)
+                            ]
                             stack.clear()
                             state = ParseState.TOPLEVEL
                             break
@@ -165,7 +172,10 @@ class CommandParser:
                 if command.startswith(commandName.split(" ")[0]):
                     maybeYouMeant.append(command)
             if len(maybeYouMeant):
-                raise ParseError(f"Unknown command. Perhaps you forgot some quotes? Valid subcommands of {commandName.split(' ')[0]} are: " + ", ".join(maybeYouMeant))
+                raise ParseError(
+                    f"Unknown command. Perhaps you forgot some quotes? Valid subcommands of {commandName.split(' ')[0]} are: "
+                    + ", ".join(maybeYouMeant)
+                )
             raise ParseError("Unknown command.") from None
         argValues = []
         for paramName, param in signature(impl).parameters.items():
@@ -186,14 +196,17 @@ class CommandParser:
                 if argType == TokenType.ERROR:
                     raise ParseError(str(argValue))
                 if argType != paramType:
-                    raise ParseError(f"Expected {paramType.name} for {paramName} but got {argType.name}")
+                    raise ParseError(
+                        f"Expected {paramType.name} for {paramName} but got {argType.name}"
+                    )
                 if argType == TokenType.FLAG:
                     assert issubclass(param.annotation, Enum)
                     try:
                         argValues.append(param.annotation(argValue))
                     except ValueError:
-                        raise ParseError(f"Invalid value for {paramName}! Expected one of: {', '.join(member.value for member in param.annotation)}")
+                        raise ParseError(
+                            f"Invalid value for {paramName}! Expected one of: {', '.join(member.value for member in param.annotation)}"
+                        )
                 else:
                     argValues.append(argValue)
         return commandName, impl, argValues
-        

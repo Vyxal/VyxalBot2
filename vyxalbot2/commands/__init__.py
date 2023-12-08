@@ -8,8 +8,11 @@ import inspect
 
 from vyxalbot2.types import EventInfo
 
+
 class Command(dict[str, Self]):
-    def __init__(self, name: str, doc: str, impl: Callable[..., AsyncGenerator[Any, None]]):
+    def __init__(
+        self, name: str, doc: str, impl: Callable[..., AsyncGenerator[Any, None]]
+    ):
         super().__init__()
         self.name = name
         self.helpStr = doc
@@ -35,7 +38,10 @@ class Command(dict[str, Self]):
                 parameters.append(f"[{parameter.name}: {typeString}]")
             else:
                 parameters.append(f"<{parameter.name}: {typeString}>")
-        return (f"`!!/{self.name} " + " ".join(parameters)).strip() + "`: " + self.helpStr
+        return (
+            (f"`!!/{self.name} " + " ".join(parameters)).strip() + "`: " + self.helpStr
+        )
+
 
 class CommandSupplier:
     def __init__(self):
@@ -56,7 +62,11 @@ class CommandSupplier:
                 doc = "…"
             else:
                 doc = attr.__doc__
-            name = re.sub(r"([A-Z])", lambda match: " " + match.group(0).lower(), attr.__name__.removesuffix("Command"))
+            name = re.sub(
+                r"([A-Z])",
+                lambda match: " " + match.group(0).lower(),
+                attr.__name__.removesuffix("Command"),
+            )
             commands[name] = Command(name, doc, attr)
-        
+
         return commands

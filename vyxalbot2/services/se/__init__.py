@@ -19,6 +19,7 @@ from vyxalbot2.services.se.parser import CommandParser, ParseError
 from vyxalbot2.types import CommonData, EventInfo
 from vyxalbot2.util import resolveChatPFP
 
+
 class SEService(Service):
     @classmethod
     async def create(cls, reactions: Reactions, common: CommonData):
@@ -74,7 +75,9 @@ class SEService(Service):
                 async with session.get(
                     f"https://chat.stackexchange.com/users/thumbs/{user}"
                 ) as response:
-                    self.pfpCache[user] = resolveChatPFP((await response.json())["email_hash"])
+                    self.pfpCache[user] = resolveChatPFP(
+                        (await response.json())["email_hash"]
+                    )
         return self.pfpCache[user]
 
     def preprocessMessage(self, message: str):
@@ -84,9 +87,20 @@ class SEService(Service):
                 continue
             url = urlparse(tag.attrs["href"])
             if not url.netloc:
-                tag.attrs["href"] = urlunparse(("https", "chat.stackexchange.com", url.path, url.params, url.query, url.fragment))
+                tag.attrs["href"] = urlunparse(
+                    (
+                        "https",
+                        "chat.stackexchange.com",
+                        url.path,
+                        url.params,
+                        url.query,
+                        url.fragment,
+                    )
+                )
             elif not url.scheme:
-                tag.attrs["href"] = urlunparse(("https", url.netloc, url.path, url.params, url.query, url.fragment))
+                tag.attrs["href"] = urlunparse(
+                    ("https", url.netloc, url.path, url.params, url.query, url.fragment)
+                )
         for tag in soup.find_all("img"):
             if not isinstance(tag, Tag):
                 continue
@@ -101,7 +115,7 @@ class SEService(Service):
             userIdent=message.user_id,
             roomIdent=message.room_id,
             messageIdent=message.message_id,
-            service=self
+            service=self,
         )
         if message.user_id == self.room.userID:
             return
@@ -114,12 +128,19 @@ class SEService(Service):
                 await self.send(line)
                 await self.commandResponseSignal.send_async(self, line=line)
             return
-        await self.messageSignal.send_async(self, event=event, directedAtUs=message.content.startswith("!!/"))
+        await self.messageSignal.send_async(
+            self, event=event, directedAtUs=message.content.startswith("!!/")
+        )
         if not message.content.startswith("!!/"):
             return
         await self.commandRequestSignal.send_async(self, event=event)
         sentAt = datetime.now()
-        response = [i async for i in self.processMessage(message.content.removeprefix("!!/"), event)]
+        response = [
+            i
+            async for i in self.processMessage(
+                message.content.removeprefix("!!/"), event
+            )
+        ]
         if not len(response):
             return
         responseIDs = [await self.room.reply(message.message_id, response[0])]
@@ -140,11 +161,13 @@ class SEService(Service):
             userIdent=edit.user_id,
             roomIdent=edit.room_id,
             messageIdent=edit.message_id,
-            service=self
+            service=self,
         )
         if edit.user_id == self.room.userID:
             return
-        await self.editSignal.send_async(self, event=event, directedAtUs=edit.content.startswith("!!/"))
+        await self.editSignal.send_async(
+            self, event=event, directedAtUs=edit.content.startswith("!!/")
+        )
         if not edit.content.startswith("!!/"):
             return
         await self.commandRequestSignal.send_async(self, event=event)
@@ -153,11 +176,16 @@ class SEService(Service):
                 await self.onMessage(room, edit)
         else:
             sentAt, idents = self.editDB[edit.message_id]
-            if (datetime.now() - sentAt).seconds > (60 * 2): # margin of error
+            if (datetime.now() - sentAt).seconds > (60 * 2):  # margin of error
                 with self.messageSignal.muted(), self.commandRequestSignal.muted():
                     await self.onMessage(room, edit)
             else:
-                response = [i async for i in self.processMessage(self.preprocessMessage(edit.content.removeprefix("!!/")), event)]
+                response = [
+                    i
+                    async for i in self.processMessage(
+                        self.preprocessMessage(edit.content.removeprefix("!!/")), event
+                    )
+                ]
                 for line in response:
                     await self.commandResponseSignal.send_async(line=line)
                 if len(response):
@@ -195,4 +223,6 @@ class SEService(Service):
                 yield l
         except Exception as e:
             yield f"@Ginger An exception occured whilst processing this message!"
-            self.logger.exception(f"An exception occured whilst processing message {event.messageIdent}:")
+            self.logger.exception(
+                f"An exception occured whilst processing message {event.messageIdent}:"
+            )

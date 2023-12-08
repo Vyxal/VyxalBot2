@@ -16,11 +16,23 @@ from jwt import encode as encodeJwt
 
 from vyxalbot2.services import PinThat, Service
 from vyxalbot2.types import AppToken, PublicConfigType
-from vyxalbot2.github.formatters import formatIssue, formatRef, formatRepo, formatUser, msgify
+from vyxalbot2.github.formatters import (
+    formatIssue,
+    formatRef,
+    formatRepo,
+    formatUser,
+    msgify,
+)
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
+
 def wrap(fun):
-    async def wrapper(self: "GitHubApplication", event: GitHubEvent, services: list[Service], gh: AsyncioGitHubAPI):
+    async def wrapper(
+        self: "GitHubApplication",
+        event: GitHubEvent,
+        services: list[Service],
+        gh: AsyncioGitHubAPI,
+    ):
         lines = [i async for i in fun(self, event)]
         for service in services:
             ids = []
@@ -29,10 +41,19 @@ def wrap(fun):
                     await service.pin(ids[-1])
                     continue
                 ids.append(await service.send(line, discordSuppressEmbeds=True))
+
     return wrapper
 
+
 class GitHubApplication(Application):
-    def __init__(self, publicConfig: PublicConfigType, privkey: str, appId: str, account: str, webhookSecret: str):
+    def __init__(
+        self,
+        publicConfig: PublicConfigType,
+        privkey: str,
+        appId: str,
+        account: str,
+        webhookSecret: str,
+    ):
         super().__init__()
         self.services = []
         self.privkey = privkey
@@ -87,7 +108,8 @@ class GitHubApplication(Application):
                     private_key=self.privkey,
                 )
                 self._appToken = AppToken(
-                    tokenData["token"], parseDatetime(tokenData["expires_at"], ignoretz=True)
+                    tokenData["token"],
+                    parseDatetime(tokenData["expires_at"], ignoretz=True),
                 )
                 return self._appToken.token
         raise ValueError("Unable to locate installation")
@@ -131,10 +153,14 @@ class GitHubApplication(Application):
             return
         if len(pullRequest["labels"]):
             return
-    
-        autotagConfig = self.publicConfig["autotag"].get(event.data["repository"]["name"])
+
+        autotagConfig = self.publicConfig["autotag"].get(
+            event.data["repository"]["name"]
+        )
         if autotagConfig is None:
-            autotagConfig = self.publicConfig["autotag"].get("*", {"prregex": {}, "issue2pr": {}})
+            autotagConfig = self.publicConfig["autotag"].get(
+                "*", {"prregex": {}, "issue2pr": {}}
+            )
         tags = set()
         for regex, tag in autotagConfig["prregex"].items():
             if re.fullmatch(regex, pullRequest["head"]["ref"]) is not None:
@@ -177,7 +203,7 @@ class GitHubApplication(Application):
                 if len(commit["message"]) < 1:
                     message = "(no title)"
                 else:
-                    message = commit['message'].splitlines()[0]
+                    message = commit["message"].splitlines()[0]
                 yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
         else:
             counter = Counter()
@@ -193,7 +219,7 @@ class GitHubApplication(Application):
                 if len(userCommits[-1]["message"]) < 1:
                     message = "(no title)"
                 else:
-                    message = userCommits[-1]['message'].splitlines()[0]
+                    message = userCommits[-1]["message"].splitlines()[0]
                 yield f"{user} {verb}ed {count} commits ([s]({userCommits[0]['url']}) [e]({userCommits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
 
     @wrap
@@ -261,7 +287,7 @@ class GitHubApplication(Application):
         # attempt to match version number, otherwise default to the whole name
         if match := re.search(r"\d.*", releaseName):
             releaseName = match[0]
-        
+
         yield f'__[{event.data["repository"]["name"]} {releaseName}]({release["html_url"]})__'
         if (
             event.data["repository"]["name"]
@@ -287,7 +313,7 @@ class GitHubApplication(Application):
                 action = "requested changes on"
             case _:
                 action = "did something to"
-        
+
         yield (
             f'{formatUser(event.data["sender"])} [{action}]({review["html_url"]}) {formatIssue(event.data["pull_request"])} in {formatRepo(event.data["repository"])}'
             + (': "' + msgify(review["body"]) + '"' if review["body"] else "")

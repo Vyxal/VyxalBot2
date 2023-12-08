@@ -17,7 +17,12 @@ from vyxalbot2.reactions import Reactions
 from vyxalbot2.services.discord import DiscordService
 from vyxalbot2.services.se import SEService
 from vyxalbot2.userdb import UserDB
-from vyxalbot2.types import CommonData, PublicConfigType, PrivateConfigType, MessagesType
+from vyxalbot2.types import (
+    CommonData,
+    PublicConfigType,
+    PrivateConfigType,
+    MessagesType,
+)
 
 __version__ = "2.0.0"
 
@@ -42,9 +47,18 @@ class VyxalBot2:
             self.privkey = f.read()
 
     async def run(self):
-        userDB = UserDB(AsyncIOMotorClient(self.privateConfig["mongoUrl"]), self.privateConfig["database"])
+        userDB = UserDB(
+            AsyncIOMotorClient(self.privateConfig["mongoUrl"]),
+            self.privateConfig["database"],
+        )
 
-        ghApp = GitHubApplication(self.publicConfig, self.privkey, self.privateConfig["appID"], self.privateConfig["account"], self.privateConfig["webhookSecret"])
+        ghApp = GitHubApplication(
+            self.publicConfig,
+            self.privkey,
+            self.privateConfig["appID"],
+            self.privateConfig["account"],
+            self.privateConfig["webhookSecret"],
+        )
         reactions = Reactions(self.messages, self.privateConfig["chat"]["ignore"])
 
         common = CommonData(
@@ -55,7 +69,7 @@ class VyxalBot2:
             0,
             datetime.now(),
             userDB,
-            ghApp
+            ghApp,
         )
         self.se = await SEService.create(reactions, common)
         self.discord = await DiscordService.create(reactions, common)
@@ -68,7 +82,7 @@ class VyxalBot2:
     async def shutdown(self, _):
         await self.se.shutdown()
         await self.discord.shutdown()
-        
+
 
 def run():
     PUBLIC_CONFIG_PATH = os.environ.get("VYXALBOT_CONFIG_PUBLIC", "config.json")

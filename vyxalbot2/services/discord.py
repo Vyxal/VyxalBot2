@@ -15,6 +15,7 @@ from vyxalbot2.services import Service
 from vyxalbot2.reactions import Reactions
 from vyxalbot2.types import CommandImpl, CommonData, EventInfo
 
+
 class VBClient(Client):
     def __init__(self, guild: int, statuses: list[str]):
         super().__init__(intents=Intents.all())
@@ -33,22 +34,26 @@ class VBClient(Client):
             assert interaction.channel_id is not None
             async for line in impl(
                 EventInfo(
-                    "", # :(
+                    "",  # :(
                     interaction.user.display_name,
                     interaction.user.display_avatar.url,
                     interaction.user.id,
                     interaction.channel_id,
                     interaction.id,
-                    service
+                    service,
                 ),
-                *args, **kwargs
+                *args,
+                **kwargs,
             ):
                 await interaction.response.send_message(line)
- 
+
         # 😰
         wrapSig = inspect.signature(wrapper)
         wrapper.__signature__ = wrapSig.replace(
-            parameters=[wrapSig.parameters["interaction"], *tuple(inspect.signature(impl).parameters.values())[1:]]
+            parameters=[
+                wrapSig.parameters["interaction"],
+                *tuple(inspect.signature(impl).parameters.values())[1:],
+            ]
         )
         return wrapper
 
@@ -60,8 +65,13 @@ class VBClient(Client):
             part = parts.pop(0)
             parent = self.tree.get_command(part)
             if parent is None:
-                parent = Group(name=part, description="This seems to be a toplevel group of some kind.")
-            assert not isinstance(parent, DiscordCommand), "Cannot nest commands under commands"
+                parent = Group(
+                    name=part,
+                    description="This seems to be a toplevel group of some kind.",
+                )
+            assert not isinstance(
+                parent, DiscordCommand
+            ), "Cannot nest commands under commands"
             while len(parts) > 1:
                 part = parts.pop(0)
                 newParent = parent.get_command(part)
@@ -69,16 +79,21 @@ class VBClient(Client):
                     newParent = Group(
                         name=part,
                         parent=parent,
-                        description="This seems to be a group of some kind."
+                        description="This seems to be a group of some kind.",
                     )
                 parent = newParent
-                assert not isinstance(parent, DiscordCommand), "Cannot nest commands under commands"
-        self.tree.add_command(DiscordCommand(
-            name=parts[0],
-            description=command.helpStr,
-            callback=self.wrap(service, command.impl),
-            parent=parent
-        ))
+                assert not isinstance(
+                    parent, DiscordCommand
+                ), "Cannot nest commands under commands"
+        self.tree.add_command(
+            DiscordCommand(
+                name=parts[0],
+                description=command.helpStr,
+                callback=self.wrap(service, command.impl),
+                parent=parent,
+            )
+        )
+
     async def setup_hook(self):
         self.tree.copy_global_to(guild=self.guild)
         self.updateStatus.start()
@@ -101,7 +116,7 @@ class DiscordService(Service):
     def __init__(self, client: VBClient, reactions: Reactions, common: CommonData):
         assert client.user is not None, "Need to be logged in to Discord!"
         super().__init__("discord", client.user.id, DiscordCommands(common))
-        
+
         self.logger = logging.getLogger("DiscordService")
         self.client = client
         self.client.event(self.on_message)
@@ -110,12 +125,14 @@ class DiscordService(Service):
 
         for command in self.commands.commands.values():
             self.client.addCommand(self, command)
-        
+
     async def startup(self):
         self.clientTask = get_event_loop().create_task(self.client.connect())
         await self.client.wait_until_ready()
         await self.client.tree.sync()
-        eventChannel = self.client.get_channel(self.common.privateConfig["discord"]["eventChannel"])
+        eventChannel = self.client.get_channel(
+            self.common.privateConfig["discord"]["eventChannel"]
+        )
         assert isinstance(eventChannel, TextChannel), str(eventChannel)
         self.eventChannel = eventChannel
         self.logger.info(f"Discord connection established! We are {self.client.user}.")
@@ -130,7 +147,7 @@ class DiscordService(Service):
             roomIdent=message.channel.id,
             userIdent=message.author.id,
             messageIdent=message.id,
-            service=self
+            service=self,
         )
         event.content = re.sub(r"<:(\w+):(\d+)>", lambda m: m.group(1), event.content)
         for embed in message.embeds:
@@ -149,13 +166,16 @@ class DiscordService(Service):
             return
         await self.messageSignal.send_async(self, event=event)
 
-
     async def shutdown(self):
         self.clientTask.cancel()
         await self.clientTask
 
     async def send(self, message: str, **kwargs):
-        return (await self.eventChannel.send(message, suppress_embeds=kwargs.get("discordSuppressEmbeds", False))).id
+        return (
+            await self.eventChannel.send(
+                message, suppress_embeds=kwargs.get("discordSuppressEmbeds", False)
+            )
+        ).id
 
     async def pin(self, message: int):
         await self.eventChannel.get_partial_message(message).pin()

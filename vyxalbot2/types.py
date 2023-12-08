@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 CommandImpl = Callable[..., AsyncGenerator[Any, None]]
 
+
 class GroupType(TypedDict, total=False):
     promotionRequires: list[str]
     canRun: list[str]
@@ -28,11 +29,13 @@ class ChatConfigType(TypedDict):
     password: str
     ignore: list[int]
 
+
 class DiscordConfigType(TypedDict):
     token: str
     guild: int
     eventChannel: int
     bridgeChannel: int
+
 
 class PrivateConfigType(TypedDict):
     port: int
@@ -50,17 +53,21 @@ class PrivateConfigType(TypedDict):
     chat: ChatConfigType
     discord: DiscordConfigType
 
+
 class AutotagType(TypedDict):
     issue2pr: dict[str, str]
     prregex: dict[str, str]
+
 
 class RequiredLabelType(TypedDict):
     tags: list[str]
     exclusive: bool
 
+
 class RequiredLabelsType(TypedDict):
     issues: list[RequiredLabelType]
     prs: list[RequiredLabelType]
+
 
 class PublicConfigType(TypedDict):
     importantRepositories: list[str]
@@ -86,6 +93,7 @@ class AppToken:
     token: str
     expires: datetime
 
+
 @dataclass
 class CommonData:
     statuses: list[str]
@@ -96,6 +104,7 @@ class CommonData:
     startupTime: datetime
     userDB: "UserDB"
     ghClient: "GitHubApplication"
+
 
 @dataclass
 class EventInfo:
