@@ -167,10 +167,9 @@ class GitHubApplication(Application):
             return
         branch = "/".join(event.data["ref"].split("/")[2:])
         verb = "force-push" if event.data["forced"] else "push"
-        if len(event.data["commits"]) <= 5:
-            for commit in event.data["commits"]:
-                if not commit["distinct"]:
-                    continue
+        commits = list(filter(lambda commit: commit["distinct"], event.data["commits"]))
+        if len(commits) <= 5:
+            for commit in commits:
                 if event.data["pusher"]["name"] == event.data["sender"]["login"]:
                     user = formatUser(event.data["sender"])
                 else:
@@ -182,22 +181,20 @@ class GitHubApplication(Application):
                 yield f"{user} {verb}ed a [commit]({commit['url']}) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
         else:
             counter = Counter()
-            userCommits = defaultdict(lambda: [])
-            for commit in event.data["commits"]:
-                if not commit["distinct"]:
-                    continue
+            commitsByUser = defaultdict(lambda: [])
+            for commit in commits:
                 name = event.data["pusher"]["name"]
                 counter[name] += 1
-                userCommits[name].append(commit)
+                commitsByUser[name].append(commit)
             for user, count in counter.items():
-                commits = userCommits[user]
+                userCommits = commitsByUser[user]
                 if user == event.data["sender"]["login"]:
                     user = formatUser(event.data["sender"])
-                if len(commits[-1]["message"]) < 1:
+                if len(userCommits[-1]["message"]) < 1:
                     message = "(no title)"
                 else:
-                    message = commits[-1]['message'].splitlines()[0]
-                yield f"{user} {verb}ed {count} commits ([s]({commits[0]['url']}) [e]({commits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
+                    message = userCommits[-1]['message'].splitlines()[0]
+                yield f"{user} {verb}ed {count} commits ([s]({userCommits[0]['url']}) [e]({userCommits[-1]['url']})) to {formatRef(branch, event.data['repository'])} in {formatRepo(event.data['repository'])}: {message}"
 
     @wrap
     async def onIssueAction(self, event: GitHubEvent):
