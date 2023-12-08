@@ -205,14 +205,16 @@ class SECommands(CommonCommands):
             try:
                 await self.common.ghClient.gh.post(
                     f"/repos/{self.common.privateConfig['account']}/{repo}/issues/{num}/comments",
-                    data={"body": body}
+                    data={"body": body},
+                    oauth_token = await self.common.ghClient.appToken()
                 )
             except BadRequest as e:
                 yield f"Failed to send comment: {e.args}"
         try:
             await self.common.ghClient.gh.patch(
                 f"/repos/{self.common.privateConfig['account']}/{repo}/issues/{num}",
-                data={"state": "closed"}
+                data={"state": "closed"},
+                oauth_token = await self.common.ghClient.appToken()
             )
         except BadRequest as e:
             yield f"Failed to close issue: {e.args}"
