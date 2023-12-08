@@ -49,7 +49,6 @@ class SEService(Service):
         self.editDB: dict[int, tuple[datetime, list[int]]] = {}
         self.parser = CommandParser(self.commands.commands)
 
-        self.common.ghClient.services.append(self)
         self.room.register(self.onMessage, EventType.MESSAGE)
         self.room.register(self.onEdit, EventType.EDIT)
 
