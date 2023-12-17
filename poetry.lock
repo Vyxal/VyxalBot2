@@ -972,7 +972,7 @@ websockets = "^10.4"
 type = "git"
 url = "https://github.com/GingerIndustries/sechat.git"
 reference = "v2"
-resolved_reference = "320d16f17dd2447c2e9e1b80a100496614147f26"
+resolved_reference = "c46526c44c3301405d628d0196dc66660c819b87"
 
 [[package]]
 name = "six"
