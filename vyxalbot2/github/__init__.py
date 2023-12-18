@@ -3,6 +3,9 @@ from collections import Counter, defaultdict
 from time import time
 
 import re
+import json
+import os
+import traceback
 
 from aiohttp import ClientSession
 from aiohttp.web import Application, Request, Response
@@ -114,6 +117,14 @@ class GitHubApplication(Application):
                 return self._appToken.token
         raise ValueError("Unable to locate installation")
 
+    def writeErrorReport(self, event: GitHubEvent, error: Exception):
+        os.makedirs("errorlogs/gh/", exist_ok=True)
+        with open(f"errorlogs/gh/{event.delivery_id}.txt") as file:
+            file.write(f"--- Error log for Github delivery {event.delivery_id}\n")
+            file.write("\n\n--- Traceback information:\n")
+            file.writelines(traceback.format_exception(error))
+            file.write("\n\n--- Delivery data:\n")
+            file.write(json.dumps(event.data, indent=4))
     async def onHookRequest(self, request: Request) -> Response:
         event = None
         try:
