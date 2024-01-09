@@ -3,7 +3,6 @@ from datetime import datetime
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
-    from vyxalbot2.services import Service
     from vyxalbot2.github import GitHubApplication
     from vyxalbot2.userdb import UserDB
 
@@ -108,10 +107,7 @@ class CommonData:
 
 @dataclass
 class EventInfo:
-    content: str
+    content: str | None
     userName: str
     pfp: str
-    roomIdent: int
-    userIdent: int
-    messageIdent: int
-    service: "Service"
+    sentBySelf: bool

@@ -9,13 +9,15 @@ import os
 from aiohttp.web import run_app
 from discord.utils import setup_logging
 from motor.motor_asyncio import AsyncIOMotorClient
+from sechat import Bot
 
 import tomli
+from vyxalbot2.commands import CommonCommands
 
-from vyxalbot2.github import GitHubApplication
+from vyxalbot2.github import GitHubApplication, VyGitHubAPI
 from vyxalbot2.reactions import Reactions
-from vyxalbot2.services.discord import DiscordService
-from vyxalbot2.services.se import SEService
+from vyxalbot2.clients.discord import DiscordClient
+from vyxalbot2.clients.se import SEClient
 from vyxalbot2.userdb import UserDB
 from vyxalbot2.types import (
     CommonData,
@@ -51,37 +53,35 @@ class VyxalBot2:
             AsyncIOMotorClient(self.privateConfig["mongoUrl"]),
             self.privateConfig["database"],
         )
-
+        common = CommonCommands(self.messages, self.statuses, userDB, self.privateConfig)
+        gh = VyGitHubAPI(
+            self.privateConfig["appID"],
+            self.privkey,
+            self.privateConfig["account"],
+        )
         ghApp = GitHubApplication(
             self.publicConfig,
-            self.privkey,
-            self.privateConfig["appID"],
-            self.privateConfig["account"],
+            gh,
             self.privateConfig["webhookSecret"],
         )
-        reactions = Reactions(self.messages, self.privateConfig["chat"]["ignore"])
+        reactions = Reactions(self.messages, common, self.privateConfig["chat"]["ignore"])
 
-        common = CommonData(
-            self.statuses,
-            self.messages,
-            self.publicConfig,
-            self.privateConfig,
-            0,
-            datetime.now(),
-            userDB,
-            ghApp,
+        self.seBot = Bot()
+        await self.seBot.authenticate(
+            self.privateConfig["chat"]["email"],
+            self.privateConfig["chat"]["password"],
+            self.privateConfig["chat"]["host"],
         )
-        self.se = await SEService.create(reactions, common)
-        self.discord = await DiscordService.create(reactions, common)
-        ghApp.services.append(self.se)
-        ghApp.services.append(self.discord)
+        room = await self.seBot.joinRoom(self.privateConfig["chat"]["room"])
+        self.se = SEClient(room, userDB, self.publicConfig, self.privateConfig, gh)
+        self.discord = DiscordClient(self.privateConfig["discord"]["guild"], common, reactions, self.messages, self.statuses)
 
         ghApp.on_shutdown.append(self.shutdown)
         return ghApp
 
     async def shutdown(self, _):
-        await self.se.shutdown()
-        await self.discord.shutdown()
+        await self.seBot.closeAllRooms()
+        await self.discord.close()
 
 
 def run():

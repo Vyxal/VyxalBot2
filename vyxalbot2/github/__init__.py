@@ -17,7 +17,7 @@ from dateutil.parser import parse as parseDatetime
 from cachetools import LRUCache
 from jwt import encode as encodeJwt
 
-from vyxalbot2.services import PinThat, Service
+from vyxalbot2.clients import PinThat, Service
 from vyxalbot2.types import AppToken, PublicConfigType
 from vyxalbot2.github.formatters import (
     formatIssue,
@@ -29,12 +29,50 @@ from vyxalbot2.github.formatters import (
 from vyxalbot2.util import GITHUB_MERGE_QUEUE
 
 
+class VyGitHubAPI(AsyncioGitHubAPI):
+    def __init__(self, appId: str, privkey: str, account: str):
+        super().__init__(ClientSession(), "VyxalBot2", cache=LRUCache(maxsize=5000))
+        self.appId = appId
+        self.privkey = privkey
+        self.account = account
+
+    def getJwt(self, *, app_id: str, private_key: str) -> str:
+        # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
+        time_int = int(time())
+        payload = {"iat": time_int - 60, "exp": time_int + (7 * 60), "iss": app_id}
+        bearer_token = encodeJwt(payload, private_key, algorithm="RS256")
+
+        return bearer_token
+
+    async def appToken(self) -> str:
+        if self._appToken != None:
+            if self._appToken.expires.timestamp() > time():
+                return self._appToken.token
+        jwt = self.getJwt(app_id=self.appId, private_key=self.privkey)
+        async for installation in self.getiter(
+            "/app/installations",
+            jwt=jwt,
+        ):
+            if installation["account"]["login"] == self.account:
+                tokenData = await get_installation_access_token(
+                    self,
+                    installation_id=installation["id"],
+                    app_id=self.appId,
+                    private_key=self.privkey,
+                )
+                self._appToken = AppToken(
+                    tokenData["token"],
+                    parseDatetime(tokenData["expires_at"], ignoretz=True),
+                )
+                return self._appToken.token
+        raise ValueError("Unable to locate installation")
+
 def wrap(fun):
     async def wrapper(
         self: "GitHubApplication",
         event: GitHubEvent,
         services: list[Service],
-        gh: AsyncioGitHubAPI,
+        gh: VyGitHubAPI,
     ):
         lines = [i async for i in fun(self, event)]
         for service in services:
@@ -52,23 +90,17 @@ class GitHubApplication(Application):
     def __init__(
         self,
         publicConfig: PublicConfigType,
-        privkey: str,
-        appId: str,
-        account: str,
+        gh: VyGitHubAPI,
         webhookSecret: str,
     ):
         super().__init__()
         self.services = []
-        self.privkey = privkey
-        self.appId = appId
-        self.account = account
         self.webhookSecret = webhookSecret
         self.publicConfig = publicConfig
 
         self._appToken: Optional[AppToken] = None
         self.ghRouter = Router()
-        self.cache = LRUCache(maxsize=5000)
-        self.gh = AsyncioGitHubAPI(ClientSession(), "VyxalBot2", cache=self.cache)
+        self.gh = gh
 
         self.router.add_post("/webhook", self.onHookRequest)
         self.ghRouter.add(self.onPushAction, "push")
@@ -85,37 +117,6 @@ class GitHubApplication(Application):
 
         self.ghRouter.add(self.onRepositoryCreated, "repository", action="created")
         self.ghRouter.add(self.onRepositoryDeleted, "repository", action="deleted")
-
-    def getJwt(self, *, app_id: str, private_key: str) -> str:
-        # This is a copy of gidgethub's get_jwt(), except with the expiry claim decreased a bit
-        time_int = int(time())
-        payload = {"iat": time_int - 60, "exp": time_int + (7 * 60), "iss": app_id}
-        bearer_token = encodeJwt(payload, private_key, algorithm="RS256")
-
-        return bearer_token
-
-    async def appToken(self) -> str:
-        if self._appToken != None:
-            if self._appToken.expires.timestamp() > time():
-                return self._appToken.token
-        jwt = self.getJwt(app_id=self.appId, private_key=self.privkey)
-        async for installation in self.gh.getiter(
-            "/app/installations",
-            jwt=jwt,
-        ):
-            if installation["account"]["login"] == self.account:
-                tokenData = await get_installation_access_token(
-                    self.gh,
-                    installation_id=installation["id"],
-                    app_id=self.appId,
-                    private_key=self.privkey,
-                )
-                self._appToken = AppToken(
-                    tokenData["token"],
-                    parseDatetime(tokenData["expires_at"], ignoretz=True),
-                )
-                return self._appToken.token
-        raise ValueError("Unable to locate installation")
 
     def writeErrorReport(self, event: GitHubEvent, error: Exception):
         os.makedirs("errorlogs/gh/", exist_ok=True)
@@ -183,7 +184,7 @@ class GitHubApplication(Application):
             ):
                 issue = await self.gh.getitem(
                     f"/repos/{event.data['repository']['full_name']}/issues/{int(match.group('number'))}",
-                    oauth_token=await self.appToken(),
+                    oauth_token=await self.gh.appToken(),
                 )
                 for label in issue["labels"]:
                     if label["name"] in autotagConfig["issue2pr"]:
@@ -192,7 +193,7 @@ class GitHubApplication(Application):
         await self.gh.patch(
             f"/repos/{event.data['repository']['full_name']}/issues/{pullRequest['number']}",
             data={"labels": list(tags)},
-            oauth_token=await self.appToken(),
+            oauth_token=await self.gh.appToken(),
         )
 
     @wrap

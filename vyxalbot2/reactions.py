@@ -2,8 +2,8 @@ from itertools import chain, repeat
 
 import random
 import re
+from vyxalbot2.commands import CommonCommands
 
-from vyxalbot2.services import Service
 from vyxalbot2.types import EventInfo
 from vyxalbot2.types import MessagesType
 
@@ -40,15 +40,14 @@ MESSAGE_REGEXES: dict[str, str] = dict(
 
 
 class Reactions:
-    def __init__(self, messages: MessagesType, ignore: list[int]):
+    def __init__(self, messages: MessagesType, commonCommands: CommonCommands, ignore: list[int]):
         self.messages = messages
+        self.commonCommands = commonCommands
         self.ignore = ignore
 
-    async def runCommand(self, service: Service, name: str, event: EventInfo, *args):
-        async for line in service.invokeCommand(name, event, *args):
-            yield line
-
-    async def onMessage(self, service: Service, event: EventInfo):
+    async def onMessage(self, event: EventInfo):
+        if event.content is None:
+            return
         for regex, function in MESSAGE_REGEXES.items():
             if function not in DO_NOT_IGNORE_COMMAND_PREFIX:
                 reMatch = re.fullmatch(regex, event.content.lower().removeprefix("!!/"))
@@ -56,49 +55,47 @@ class Reactions:
                 reMatch = re.fullmatch(regex, event.content.lower())
             if reMatch is not None:
                 if (
-                    event.userIdent == event.service.clientIdent
+                    event.sentBySelf
                     and function not in OK_TO_SELF_REPLY
                 ):
                     continue
-                if event.userIdent in self.ignore:
-                    continue
-                async for line in getattr(self, function)(service, event, reMatch):
+                async for line in getattr(self, function)(event, reMatch):
                     yield line
 
-    async def info(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "info", event):
+    async def info(self, event: EventInfo, reMatch: re.Match):
+        async for line in self.commonCommands.infoCommand(event):
             yield line
 
-    async def cookie(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "cookie", event):
+    async def cookie(self, event: EventInfo, reMatch: re.Match):
+        async for line in  self.commonCommands.cookieCommand(event):
             yield line
 
-    async def coffee(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "coffee", event):
+    async def coffee(self, event: EventInfo, reMatch: re.Match):
+        async for line in  self.commonCommands.coffeeCommand(event):
             yield line
 
-    async def maul(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "maul", event):
+    async def maul(self, event: EventInfo, reMatch: re.Match):
+        async for line in  self.commonCommands.maulCommand(event, reMatch.group(1)):
             yield line
 
-    async def sus(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "sus", event):
+    async def sus(self, event: EventInfo, reMatch: re.Match):
+        async for line in self.commonCommands.susCommand(event):
             yield line
 
-    async def blame(self, service: Service, event: EventInfo, reMatch: re.Match):
-        async for line in self.runCommand(service, "blame", event):
+    async def blame(self, event: EventInfo, reMatch: re.Match):
+        async for line in self.commonCommands.blameCommand(event):
             yield line
 
-    async def goodBot(self, service: Service, event: EventInfo, reMatch: re.Match):
+    async def goodBot(self, event: EventInfo, reMatch: re.Match):
         yield ":3"
 
-    async def hello(self, service: Service, event: EventInfo, reMatch: re.Match):
+    async def hello(self, event: EventInfo, reMatch: re.Match):
         yield random.choice(self.messages["hello"])
 
-    async def goodbye(self, service: Service, event: EventInfo, reMatch: re.Match):
+    async def goodbye(self, event: EventInfo, reMatch: re.Match):
         yield random.choice(self.messages["goodbye"])
 
-    async def mojo(self, service: Service, event: EventInfo, reMatch: re.Match):
+    async def mojo(self, event: EventInfo, reMatch: re.Match):
         emojis = [
             "".join(
                 random.choices(("🤣", "😂"), weights=[12, 8], k=random.randint(3, 7))
