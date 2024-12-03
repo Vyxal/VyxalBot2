@@ -15,7 +15,7 @@
         },
         "member": {
             "promotionRequires": ["member", "admin"],
-            "canRun": ["ping", "issue open", "idiom add"]
+            "canRun": ["ping", "issue open", "issue close", "idiom add"]
         },
         "discussion": {}
     },
