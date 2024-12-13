@@ -1,2 +1,2 @@
 # VyxalBot2
-The second version of EV3RY  BUDDY  'S FAVORITE [[Number 1 Rated Chatbot1997]]
+Archived. See https://github.com/Vyxal/VyxalBot3 for the current bot.
